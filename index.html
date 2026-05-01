@@ -1677,83 +1677,240 @@ function selectDuration(btn) {
   selectedDuration = btn.dataset.val;
 }
 
-async function generateWorkout() {
+// ═══════════════════════════════════════
+// WORKOUT ENGINE — SMART LOCAL GENERATOR
+// ═══════════════════════════════════════
+
+function r5(n) { return Math.round(n / 5) * 5; } // round to nearest 5
+
+function getWeights(u) {
+  // Estimate bench 1RM from profile if not provided
+  let bench = u.bench1rm;
+  if (!bench) {
+    const expBase = { beginner: 115, intermediate: 185, advanced: 265 };
+    bench = expBase[u.experience] || 185;
+  }
+  // Scale all lifts relative to bench
+  return {
+    bench,
+    row:        r5(bench * 0.55),
+    pulldown:   r5(bench * 0.42),
+    cable_row:  r5(bench * 0.40),
+    db_row:     r5(bench * 0.30),
+    curl_bar:   r5(bench * 0.22),
+    curl_db:    r5(bench * 0.10),
+    cable_curl: r5(bench * 0.16),
+    squat:      r5(bench * 0.90),
+    rdl:        r5(bench * 0.70),
+    leg_press:  r5(bench * 1.20),
+    leg_curl:   r5(bench * 0.28),
+    leg_ext:    r5(bench * 0.32),
+    ohp:        r5(bench * 0.60),
+    lat_raise:  r5(bench * 0.065),
+    tricep_pd:  r5(bench * 0.18),
+    face_pull:  r5(bench * 0.14),
+    incline:    r5(bench * 0.75),
+    fly:        r5(bench * 0.22),
+    chest_press_machine: r5(bench * 0.70),
+  };
+}
+
+function sets(label, reps, weight, tempo, warmup = false) {
+  const w = typeof weight === 'number' ? `${weight} lbs` : weight;
+  const warmW = typeof weight === 'number' ? `${r5(weight * 0.55)} lbs` : weight;
+  const s = [];
+  if (warmup) s.push({ label: 'Warm-up', reps: '10', weight: warmW, tempo: 'Controlled' });
+  // Ramp up sets
+  const sets3 = [
+    { label: '1', reps, weight: typeof weight === 'number' ? `${r5(weight * 0.88)} lbs` : w, tempo },
+    { label: '2', reps, weight: w, tempo },
+    { label: '3', reps, weight: w, tempo },
+  ];
+  const sets4 = [...sets3, { label: '4', reps: typeof reps === 'string' && reps.includes('-') ? reps.split('-')[0] : reps, weight: w, tempo: 'Controlled' }];
+  return [...s, ...(label === 4 ? sets4 : sets3)];
+}
+
+function setsSimple(reps, weight, tempo, count = 3, withWarmup = false) {
+  const w = typeof weight === 'number' ? `${weight} lbs` : weight;
+  const warmW = typeof weight === 'number' ? `${r5(weight * 0.55)} lbs` : weight;
+  const result = [];
+  if (withWarmup) result.push({ label: 'Warm-up', reps: '10', weight: warmW, tempo: 'Controlled' });
+  for (let i = 1; i <= count; i++) result.push({ label: String(i), reps, weight: w, tempo });
+  return result;
+}
+
+// Rep ranges by goal
+function reps(goal, type = 'compound') {
+  const map = {
+    muscle_gain: { compound: '8–10', isolation: '10–12', finisher: '12–15' },
+    fat_loss:    { compound: '12–15', isolation: '15–20', finisher: '20' },
+    strength:    { compound: '4–6', isolation: '6–8', finisher: '8–10' },
+    athletic:    { compound: '6–8', isolation: '8–12', finisher: '10–12' },
+  };
+  return (map[goal] || map.muscle_gain)[type];
+}
+
+function tempo(goal) {
+  return goal === 'strength' ? '2-1-1' : goal === 'fat_loss' ? '2-0-1' : '3-1-1';
+}
+
+function rest(goal, type = 'compound') {
+  const map = {
+    muscle_gain: { compound: '90 sec', isolation: '60 sec' },
+    fat_loss:    { compound: '45 sec', isolation: '30 sec' },
+    strength:    { compound: '3 min', isolation: '90 sec' },
+    athletic:    { compound: '2 min', isolation: '60 sec' },
+  };
+  return (map[goal] || map.muscle_gain)[type];
+}
+
+// Workout templates library
+const WORKOUTS = {
+  'Back & Biceps': (u, w, dur) => {
+    const g = u.goal, t = tempo(g);
+    const exCount = dur === '30' ? 4 : dur === '45' ? 6 : 7;
+    const names = [
+      'Deadlift', 'Pull-Up / Lat Pulldown', 'Barbell Row', 'Seated Cable Row',
+      'Single-Arm DB Row', 'Straight-Arm Pulldown', 'EZ-Bar Curl',
+      'Incline DB Curl', 'Cable Curl', 'Face Pull'
+    ];
+    const goalLabel = { muscle_gain: 'Hypertrophy', fat_loss: 'Fat Burn', strength: 'Strength', athletic: 'Performance' };
+    const workoutNames = { muscle_gain: 'PULL DAY', fat_loss: 'BACK BURN', strength: 'HEAVY PULL', athletic: 'POWER PULL' };
+
+    const allEx = [
+      { name: 'Barbell Bent-Over Row', muscles: 'Lats · Rhomboids · Biceps', type: 'Compound', sets: setsSimple(reps(g,'compound'), w.row, t, 3, true), rest: rest(g,'compound'), cue: 'Hip hinge at 45°, drive elbows past your torso. Squeeze hard at the top for 1 second. Control the descent — the eccentric builds the muscle.' },
+      { name: u.equipment === 'bodyweight' ? 'Pull-Up' : 'Lat Pulldown', muscles: 'Lats · Biceps', type: 'Compound', sets: setsSimple(reps(g,'compound'), u.equipment === 'bodyweight' ? 'Bodyweight' : w.pulldown, t, 4), rest: rest(g,'compound'), cue: 'Depress your shoulder blades before pulling. Drive elbows to your hip pockets — not just down. Full stretch at the top on every rep.' },
+      { name: 'Single-Arm DB Row', muscles: 'Lats · Mid-Back', type: 'Unilateral', sets: setsSimple(reps(g,'compound'), w.db_row, t, 3), rest: rest(g,'isolation'), cue: 'Let the dumbbell fully stretch at the bottom. Row elbow high and slightly flared. No torso rotation to cheat the weight up.' },
+      { name: 'Seated Cable Row', muscles: 'Rhomboids · Traps', type: 'Isolation', sets: setsSimple(reps(g,'isolation'), w.cable_row, t, 3), rest: rest(g,'isolation'), cue: 'Hold the squeeze for 2 full seconds at the top. Chest tall, no leaning back. Full stretch on every rep — range of motion is everything here.' },
+      { name: 'Straight-Arm Pulldown', muscles: 'Lats', type: 'Isolation', sets: setsSimple(reps(g,'finisher'), w.pulldown * 0.5, t, 3), rest: rest(g,'isolation'), cue: 'Arms stay straight with a slight bend. Think about pulling your lats into your back pockets. This is pure lat isolation — go lighter and feel every rep.' },
+      { name: 'EZ-Bar Curl', muscles: 'Biceps Long + Short Head', type: 'Compound Curl', sets: setsSimple(reps(g,'isolation'), w.curl_bar, t, 3), rest: rest(g,'isolation'), cue: 'Slow 3-second eccentric is where growth happens. Elbows pinned to your sides — no swinging. EZ-bar reduces wrist strain vs straight bar.' },
+      { name: 'Incline DB Curl', muscles: 'Biceps Long Head', type: 'Stretch Emphasis', sets: setsSimple(reps(g,'isolation'), w.curl_db, '3-1-1', 3), rest: rest(g,'isolation'), cue: 'Set bench to 60°. Let arms hang fully behind your body for max long-head stretch. Supinate your wrist as you curl up for peak contraction.' },
+    ];
+
+    return { name: workoutNames[g] || 'PULL DAY', duration: parseInt(dur), muscle: 'Back & Biceps', goal: goalLabel[g] || 'Hypertrophy', exercises: allEx.slice(0, exCount) };
+  },
+
+  'Chest & Triceps': (u, w, dur) => {
+    const g = u.goal, t = tempo(g);
+    const exCount = dur === '30' ? 4 : dur === '45' ? 6 : 7;
+    const goalLabel = { muscle_gain: 'Hypertrophy', fat_loss: 'Fat Burn', strength: 'Strength', athletic: 'Performance' };
+    const workoutNames = { muscle_gain: 'PUSH DAY', fat_loss: 'CHEST BURN', strength: 'HEAVY PUSH', athletic: 'POWER PUSH' };
+
+    const allEx = [
+      { name: 'Barbell Bench Press', muscles: 'Chest · Triceps · Front Delts', type: 'Compound', sets: setsSimple(reps(g,'compound'), w.bench, t, 3, true), rest: rest(g,'compound'), cue: 'Arch slightly, retract your scapula. Touch the bar to your lower chest, drive up and slightly back. Keep your elbows at 45° — not flared out.' },
+      { name: 'Incline DB Press', muscles: 'Upper Chest · Triceps', type: 'Compound', sets: setsSimple(reps(g,'compound'), w.incline, t, 3), rest: rest(g,'compound'), cue: 'Set bench to 30–45°. Let DBs stretch at the bottom, press and squeeze together at the top. Upper chest responds better to incline — don\'t skip it.' },
+      { name: 'Cable Fly / Pec Dec', muscles: 'Chest · Inner Pec', type: 'Isolation', sets: setsSimple(reps(g,'isolation'), w.fly, t, 3), rest: rest(g,'isolation'), cue: 'Keep a slight bend in your elbows throughout. Think about hugging a giant tree. Squeeze hard at the center — you should feel it across your entire chest.' },
+      { name: 'Tricep Pushdown', muscles: 'Triceps', type: 'Isolation', sets: setsSimple(reps(g,'isolation'), w.tricep_pd, t, 3), rest: rest(g,'isolation'), cue: 'Elbows locked at your sides — only your forearms move. Fully extend at the bottom, hold 1 sec. Don\'t let your elbows flare as the weight gets heavy.' },
+      { name: 'Overhead Tricep Extension', muscles: 'Triceps Long Head', type: 'Isolation', sets: setsSimple(reps(g,'isolation'), w.tricep_pd * 0.75, '3-1-1', 3), rest: rest(g,'isolation'), cue: 'Elbows stay pointed at the ceiling throughout. Long head gets max stretch in this position — control the descent and feel the stretch.' },
+      { name: 'Close-Grip Bench Press', muscles: 'Triceps · Inner Chest', type: 'Compound', sets: setsSimple(reps(g,'compound'), r5(w.bench * 0.65), t, 3), rest: rest(g,'isolation'), cue: 'Hands shoulder-width apart. Keep elbows tucked close to your body. Lower to your lower chest and press — triceps do most of the work here.' },
+      { name: 'Chest Dips', muscles: 'Lower Chest · Triceps', type: 'Compound', sets: setsSimple(reps(g,'compound'), 'Bodyweight', t, 3), rest: rest(g,'isolation'), cue: 'Lean forward slightly to emphasize chest over triceps. Full depth — shoulders below elbows. Add weight between your legs once bodyweight becomes easy.' },
+    ];
+
+    return { name: workoutNames[g] || 'PUSH DAY', duration: parseInt(dur), muscle: 'Chest & Triceps', goal: goalLabel[g] || 'Hypertrophy', exercises: allEx.slice(0, exCount) };
+  },
+
+  'Legs': (u, w, dur) => {
+    const g = u.goal, t = tempo(g);
+    const exCount = dur === '30' ? 4 : dur === '45' ? 6 : 7;
+    const goalLabel = { muscle_gain: 'Hypertrophy', fat_loss: 'Fat Burn', strength: 'Strength', athletic: 'Performance' };
+    const workoutNames = { muscle_gain: 'LEG DAY', fat_loss: 'LEG BURN', strength: 'SQUAT HEAVY', athletic: 'LEG POWER' };
+
+    const allEx = [
+      { name: 'Barbell Back Squat', muscles: 'Quads · Glutes · Hamstrings', type: 'Compound', sets: setsSimple(reps(g,'compound'), u.equipment === 'bodyweight' ? 'Bodyweight' : w.squat, t, 3, true), rest: rest(g,'compound'), cue: 'Bar on upper traps, chest up, knees tracking toes. Hit parallel or below — depth is non-negotiable for growth. Drive through your heels on the way up.' },
+      { name: 'Romanian Deadlift', muscles: 'Hamstrings · Glutes', type: 'Compound', sets: setsSimple(reps(g,'compound'), w.rdl, t, 3), rest: rest(g,'compound'), cue: 'Soft bend in knees, push your hips back as the bar travels down your legs. Feel the hamstring stretch at the bottom. Drive hips forward to stand — not a back exercise.' },
+      { name: 'Leg Press', muscles: 'Quads · Glutes', type: 'Compound', sets: setsSimple(reps(g,'isolation'), w.leg_press, t, 3), rest: rest(g,'isolation'), cue: 'Feet shoulder-width, mid-platform. Lower until knees are at 90° — don\'t lock out at the top. High foot placement targets glutes, low targets quads.' },
+      { name: 'Leg Curl', muscles: 'Hamstrings', type: 'Isolation', sets: setsSimple(reps(g,'isolation'), w.leg_curl, t, 3), rest: rest(g,'isolation'), cue: 'Control the eccentric — 3 seconds down. Squeeze hard at the top of the curl. Hamstrings are often undertrained; this fixes that.' },
+      { name: 'Leg Extension', muscles: 'Quads', type: 'Isolation', sets: setsSimple(reps(g,'isolation'), w.leg_ext, t, 3), rest: rest(g,'isolation'), cue: 'Full extension at the top, hold 1 second. Slow and controlled — don\'t swing the weight. Feel the quad contraction at peak extension.' },
+      { name: 'Walking Lunges', muscles: 'Quads · Glutes · Balance', type: 'Unilateral', sets: setsSimple(reps(g,'finisher') + ' each', u.equipment === 'bodyweight' ? 'Bodyweight' : `${r5(w.curl_db * 1.5)} lb DBs`, '2-0-1', 3), rest: rest(g,'isolation'), cue: 'Step far enough that your front knee stays behind your toes. Keep your torso upright. Unilateral work exposes and fixes side-to-side imbalances.' },
+      { name: 'Standing Calf Raise', muscles: 'Calves (Gastrocnemius)', type: 'Isolation', sets: setsSimple('15–20', u.equipment === 'bodyweight' ? 'Bodyweight' : `${r5(w.bench * 0.35)} lbs`, '2-2-1', 3), rest: '45 sec', cue: 'Full stretch at the bottom, full rise at the top. Pause 2 seconds at the top — most people never fully contract their calves. Go slow, go full range.' },
+    ];
+
+    return { name: workoutNames[g] || 'LEG DAY', duration: parseInt(dur), muscle: 'Legs', goal: goalLabel[g] || 'Hypertrophy', exercises: allEx.slice(0, exCount) };
+  },
+
+  'Shoulders & Arms': (u, w, dur) => {
+    const g = u.goal, t = tempo(g);
+    const exCount = dur === '30' ? 4 : dur === '45' ? 6 : 7;
+    const goalLabel = { muscle_gain: 'Hypertrophy', fat_loss: 'Fat Burn', strength: 'Strength', athletic: 'Performance' };
+    const workoutNames = { muscle_gain: 'SHOULDER & ARMS', fat_loss: 'ARMS BURN', strength: 'PRESS HEAVY', athletic: 'SHOULDER POWER' };
+
+    const allEx = [
+      { name: 'Overhead Press (Barbell or DB)', muscles: 'Shoulders · Triceps', type: 'Compound', sets: setsSimple(reps(g,'compound'), w.ohp, t, 3, true), rest: rest(g,'compound'), cue: 'Bar starts at collarbone, press straight up and slightly back. Lock out fully overhead. Brace your core — this is a full-body stability challenge.' },
+      { name: 'DB Lateral Raise', muscles: 'Lateral Delts', type: 'Isolation', sets: setsSimple(reps(g,'isolation'), w.lat_raise, '2-1-2', 3), rest: rest(g,'isolation'), cue: 'Lead with your elbows, not your wrists. Raise to shoulder height — no higher. Slight forward lean isolates the lateral head. Never ego-load this.' },
+      { name: 'EZ-Bar Curl', muscles: 'Biceps', type: 'Compound Curl', sets: setsSimple(reps(g,'isolation'), w.curl_bar, t, 3), rest: rest(g,'isolation'), cue: 'Slow 3-second eccentric. Elbows pinned to sides. Full stretch at the bottom, full contraction at the top — squeeze hard.' },
+      { name: 'Tricep Pushdown', muscles: 'Triceps', type: 'Isolation', sets: setsSimple(reps(g,'isolation'), w.tricep_pd, t, 3), rest: rest(g,'isolation'), cue: 'Elbows locked at sides. Full extension at the bottom — hold 1 sec. Don\'t let elbows flare. The tricep is 2/3 of your arm — prioritize it.' },
+      { name: 'Hammer Curl', muscles: 'Brachialis · Biceps', type: 'Isolation', sets: setsSimple(reps(g,'isolation'), w.curl_db * 1.2, '2-0-1', 3), rest: rest(g,'isolation'), cue: 'Neutral grip throughout — thumbs up. Targets the brachialis under the bicep, which pushes the peak up. Alternate arms for better control.' },
+      { name: 'Face Pull', muscles: 'Rear Delts · Traps', type: 'Isolation', sets: setsSimple(reps(g,'finisher'), w.face_pull, '2-2-1', 3), rest: '45 sec', cue: 'Pull to your forehead, elbows high and flared. Rotate your hands outward at the end — external rotation is the key. Never skip this — it protects your shoulders.' },
+      { name: 'Overhead Tricep Extension', muscles: 'Triceps Long Head', type: 'Isolation', sets: setsSimple(reps(g,'isolation'), w.tricep_pd * 0.7, '3-1-1', 3), rest: rest(g,'isolation'), cue: 'Elbows pointed at the ceiling, forearms move only. Max stretch on the long head in this position. Feel the stretch before each rep.' },
+    ];
+
+    return { name: workoutNames[g] || 'SHOULDER & ARMS', duration: parseInt(dur), muscle: 'Shoulders & Arms', goal: goalLabel[g] || 'Hypertrophy', exercises: allEx.slice(0, exCount) };
+  },
+
+  'Full Body': (u, w, dur) => {
+    const g = u.goal, t = tempo(g);
+    const exCount = dur === '30' ? 4 : dur === '45' ? 6 : 7;
+    const goalLabel = { muscle_gain: 'Hypertrophy', fat_loss: 'Fat Burn', strength: 'Strength', athletic: 'Performance' };
+    const workoutNames = { muscle_gain: 'FULL BODY', fat_loss: 'FULL BURN', strength: 'TOTAL STRENGTH', athletic: 'TOTAL ATHLETE' };
+
+    const allEx = [
+      { name: 'Barbell Squat', muscles: 'Quads · Glutes · Core', type: 'Compound', sets: setsSimple(reps(g,'compound'), u.equipment === 'bodyweight' ? 'Bodyweight' : w.squat, t, 3, true), rest: rest(g,'compound'), cue: 'The king of all exercises. Full depth, chest up, knees tracking toes. Every rep builds total body strength and hormonal response.' },
+      { name: 'Bench Press', muscles: 'Chest · Triceps · Delts', type: 'Compound', sets: setsSimple(reps(g,'compound'), w.bench, t, 3), rest: rest(g,'compound'), cue: 'Retract shoulder blades, slight arch. Touch lower chest, drive up and slightly back. 45° elbow angle protects your shoulder joint.' },
+      { name: 'Barbell Row', muscles: 'Back · Biceps', type: 'Compound', sets: setsSimple(reps(g,'compound'), w.row, t, 3), rest: rest(g,'compound'), cue: '45° hip hinge, drive elbows back past torso. Squeeze the back hard at the top. This is your most important pulling movement.' },
+      { name: 'Overhead Press', muscles: 'Shoulders · Triceps', type: 'Compound', sets: setsSimple(reps(g,'compound'), w.ohp, t, 3), rest: rest(g,'isolation'), cue: 'Press straight up from collarbone. Full lockout overhead. Core braced throughout — this is a standing plank plus a press.' },
+      { name: 'Romanian Deadlift', muscles: 'Hamstrings · Glutes', type: 'Compound', sets: setsSimple(reps(g,'compound'), w.rdl, t, 3), rest: rest(g,'isolation'), cue: 'Push hips back, bar slides down your legs. Hamstring stretch is the cue to drive hips forward. Don\'t think of this as a back exercise.' },
+      { name: 'Pull-Up / Lat Pulldown', muscles: 'Lats · Biceps', type: 'Compound', sets: setsSimple(reps(g,'compound'), u.equipment === 'bodyweight' ? 'Bodyweight' : w.pulldown, t, 3), rest: rest(g,'isolation'), cue: 'Full dead hang at the bottom. Drive elbows to hip pockets. Full body pull — don\'t cut the range of motion.' },
+      { name: 'DB Lateral Raise', muscles: 'Lateral Delts', type: 'Isolation', sets: setsSimple(reps(g,'finisher'), w.lat_raise, '2-1-2', 3), rest: '45 sec', cue: 'Lead with elbows, raise to shoulder height. Never ego-load. This builds the shoulder width that makes everything look bigger.' },
+    ];
+
+    return { name: workoutNames[g] || 'FULL BODY', duration: parseInt(dur), muscle: 'Full Body', goal: goalLabel[g] || 'Hypertrophy', exercises: allEx.slice(0, exCount) };
+  },
+
+  'Core & Cardio': (u, w, dur) => {
+    const g = u.goal;
+    const exCount = dur === '30' ? 4 : dur === '45' ? 6 : 7;
+    const workoutNames = { muscle_gain: 'CORE STRENGTH', fat_loss: 'CARDIO BURN', strength: 'CORE POWER', athletic: 'CONDITIONING' };
+
+    const allEx = [
+      { name: 'Plank', muscles: 'Core · Transverse Abdominis', type: 'Isometric', sets: [{ label: '1', reps: '45 sec', weight: 'Bodyweight', tempo: 'Hold' }, { label: '2', reps: '45 sec', weight: 'Bodyweight', tempo: 'Hold' }, { label: '3', reps: '60 sec', weight: 'Bodyweight', tempo: 'Hold' }], rest: '45 sec', cue: 'Straight line from head to heels. Squeeze glutes and abs simultaneously. Breathe — don\'t hold your breath. Push the ground away with your elbows.' },
+      { name: 'Dead Bug', muscles: 'Core · Stability', type: 'Stability', sets: [{ label: '1', reps: '10 each', weight: 'Bodyweight', tempo: 'Slow' }, { label: '2', reps: '10 each', weight: 'Bodyweight', tempo: 'Slow' }, { label: '3', reps: '10 each', weight: 'Bodyweight', tempo: 'Slow' }], rest: '45 sec', cue: 'Lower back pressed into the floor throughout. Opposite arm and leg extend slowly. The slower the better — speed is the enemy here.' },
+      { name: 'Ab Wheel Rollout', muscles: 'Core · Lats', type: 'Compound', sets: [{ label: '1', reps: '8', weight: 'Bodyweight', tempo: '3-1-2' }, { label: '2', reps: '10', weight: 'Bodyweight', tempo: '3-1-2' }, { label: '3', reps: '10', weight: 'Bodyweight', tempo: '3-1-2' }], rest: '60 sec', cue: 'Brace your core like you\'re about to take a punch. Roll as far as you can without your back arching. Pull back with your lats, not your arms.' },
+      { name: 'Hanging Leg Raise', muscles: 'Lower Abs · Hip Flexors', type: 'Compound', sets: [{ label: '1', reps: '10', weight: 'Bodyweight', tempo: '2-1-2' }, { label: '2', reps: '12', weight: 'Bodyweight', tempo: '2-1-2' }, { label: '3', reps: '12', weight: 'Bodyweight', tempo: '2-1-2' }], rest: '60 sec', cue: 'No swinging — control the movement. Squeeze your abs at the top. If this is too hard, do lying leg raises first. Don\'t let momentum do the work.' },
+      { name: 'Russian Twist', muscles: 'Obliques · Rotational Core', type: 'Rotational', sets: [{ label: '1', reps: '20 total', weight: 'Bodyweight', tempo: 'Controlled' }, { label: '2', reps: '20 total', weight: r5(w.bench * 0.08) + ' lb plate', tempo: 'Controlled' }, { label: '3', reps: '20 total', weight: r5(w.bench * 0.08) + ' lb plate', tempo: 'Controlled' }], rest: '45 sec', cue: 'Feet slightly off the ground, torso at 45°. Rotate from your core — not just your arms. Touch the ground on each side for full range.' },
+      { name: 'Burpee', muscles: 'Full Body · Cardio', type: 'Cardio', sets: [{ label: '1', reps: '10', weight: 'Bodyweight', tempo: 'Fast' }, { label: '2', reps: '10', weight: 'Bodyweight', tempo: 'Fast' }, { label: '3', reps: '10', weight: 'Bodyweight', tempo: 'Max effort' }], rest: '60 sec', cue: 'Chest to floor on every rep — no half reps. Jump as high as you can at the top. Pace yourself on set 1, go all-out on set 3.' },
+      { name: 'Mountain Climbers', muscles: 'Core · Cardio · Hip Flexors', type: 'Cardio', sets: [{ label: '1', reps: '30 sec', weight: 'Bodyweight', tempo: 'Fast' }, { label: '2', reps: '40 sec', weight: 'Bodyweight', tempo: 'Fast' }, { label: '3', reps: '45 sec', weight: 'Bodyweight', tempo: 'Max effort' }], rest: '30 sec', cue: 'Hips level with your shoulders — don\'t let them rise. Drive knees toward chest as fast as possible. Keep your core tight throughout.' },
+    ];
+
+    return { name: workoutNames[g] || 'CORE & CARDIO', duration: parseInt(dur), muscle: 'Core & Cardio', goal: 'Conditioning', exercises: allEx.slice(0, exCount) };
+  },
+};
+
+function generateWorkout() {
   const u = state.user;
   document.getElementById('ai-form').style.display = 'none';
   document.getElementById('aiLoading').classList.add('show');
   document.getElementById('generatedWorkout').classList.remove('show');
 
-  const goalMap = { muscle_gain: 'muscle hypertrophy (8-15 reps, moderate weight)', fat_loss: 'fat loss (12-20 reps, supersets, minimal rest)', strength: 'strength (3-6 reps, heavy weight, long rest)', athletic: 'athletic performance (power, explosiveness, functional movement)' };
-  const equipMap = { full_gym: 'full commercial gym with barbells, cables, machines, and dumbbells', home_gym: 'home gym with barbell, rack, and dumbbells', dumbbells: 'dumbbells only', bodyweight: 'bodyweight only, no equipment' };
+  // Simulate a brief loading moment for UX
+  setTimeout(() => {
+    try {
+      const w = getWeights(u);
+      const template = WORKOUTS[selectedMuscle];
+      if (!template) throw new Error('No template for ' + selectedMuscle);
 
-  const prompt = `You are an expert personal trainer. Generate a detailed ${selectedDuration}-minute ${selectedMuscle} workout.
+      const workout = template(u, w, selectedDuration);
+      workout.id = Date.now();
+      workout.createdAt = new Date().toISOString();
 
-User profile:
-- Name: ${u.name}
-- Goal: ${goalMap[u.goal]}
-- Experience: ${u.experience}
-- Equipment: ${equipMap[u.equipment]}
-- Weight: ${u.weight ? u.weight + ' lbs' : 'unknown'}
-- Estimated bench 1RM: ${u.bench1rm ? u.bench1rm + ' lbs' : 'unknown'}
-
-IMPORTANT: Respond ONLY with a valid JSON object. No markdown, no explanation. Use this EXACT structure:
-{
-  "name": "workout name (short, punchy)",
-  "duration": ${selectedDuration},
-  "muscle": "${selectedMuscle}",
-  "goal": "goal label (2-3 words)",
-  "exercises": [
-    {
-      "name": "Exercise Name",
-      "muscles": "Primary · Secondary",
-      "type": "Compound|Isolation|Unilateral",
-      "sets": [
-        {"label": "Warm-up", "reps": "10", "weight": "calculated weight or bodyweight", "tempo": "controlled"},
-        {"label": "1", "reps": "8", "weight": "calculated weight", "tempo": "3-1-1"},
-        {"label": "2", "reps": "8", "weight": "calculated weight", "tempo": "3-1-1"},
-        {"label": "3", "reps": "6-8", "weight": "calculated weight", "tempo": "3-1-1"}
-      ],
-      "rest": "90 sec",
-      "cue": "coaching cue in 2-3 sentences"
+      document.getElementById('aiLoading').classList.remove('show');
+      renderGeneratedWorkout(workout);
+    } catch (err) {
+      document.getElementById('aiLoading').classList.remove('show');
+      document.getElementById('ai-form').style.display = 'block';
+      showToast('Something went wrong — try again');
+      console.error(err);
     }
-  ]
-}
-
-Rules:
-- Include 5-7 exercises appropriate for ${selectedDuration} minutes
-- Calculate realistic weights based on ${u.bench1rm ? 'their ' + u.bench1rm + ' lb bench 1RM as baseline' : 'their experience level as beginner=light, intermediate=moderate, advanced=heavy'}
-- Weight calculations: rows ~55% of bench, pulldowns ~40% of bench, curls ~20% of bench, etc.
-- Round weights to nearest 5 lbs
-- For bodyweight exercises, use "Bodyweight" as weight
-- Make coaching cues specific and actionable`;
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-
-    const data = await response.json();
-    let text = data.content?.filter(c => c.type === 'text').map(c => c.text).join('') || '';
-    text = text.replace(/```json|```/g, '').trim();
-    const workout = JSON.parse(text);
-    workout.id = Date.now();
-    workout.createdAt = new Date().toISOString();
-
-    document.getElementById('aiLoading').classList.remove('show');
-    renderGeneratedWorkout(workout);
-
-  } catch (err) {
-    document.getElementById('aiLoading').classList.remove('show');
-    document.getElementById('ai-form').style.display = 'block';
-    showToast('Generation failed — try again');
-    console.error(err);
-  }
+  }, 1400);
 }
 
 function renderGeneratedWorkout(workout) {
