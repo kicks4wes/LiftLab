@@ -1331,19 +1331,111 @@ select.field-input { appearance: none; }
   animation: shimmer 1.5s infinite;
   border-radius: 8px;
 }
-@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-</style>
+/* ─── FIREBASE AUTH ─── */
+.auth-loading {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999;
+}
+.auth-loading-logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 52px; font-weight: 900; letter-spacing: -1px;
+  margin-bottom: 24px;
+}
+.auth-loading-logo span { color: var(--accent); }
+
+.auth-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 16px 0; color: var(--text3); font-size: 12px;
+}
+.auth-divider::before, .auth-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border2);
+}
+
+.google-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; max-width: 320px; margin: 0 auto 12px;
+  padding: 16px; border-radius: var(--radius);
+  border: 1px solid var(--border2); background: var(--card);
+  color: var(--text); font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: border-color 0.2s;
+}
+.google-btn:hover { border-color: var(--text2); }
+.google-icon { width: 20px; height: 20px; }
+
+.auth-email-form {
+  width: 100%; max-width: 320px; margin: 0 auto;
+}
+.auth-email-form .field-input { margin-bottom: 10px; }
+.auth-toggle {
+  background: none; border: none; color: var(--accent);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  margin-top: 12px; text-align: center; width: 100%;
+}
+.auth-error {
+  color: var(--red); font-size: 13px; text-align: center;
+  margin-top: 8px; min-height: 20px;
+}
+
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px 6px 6px;
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 20px; cursor: pointer;
+}
+.user-chip-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent); color: #000;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.user-chip-name { font-size: 13px; font-weight: 600; color: var(--text2); }
+
+.sync-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; color: var(--blue);
+  background: #0a1020; border: 1px solid #1a2a40;
+  border-radius: 6px; padding: 3px 8px;
+}
+
 </head>
 <body>
 
+<!-- AUTH LOADING -->
+<div class="auth-loading" id="authLoading">
+  <div class="auth-loading-logo">LIFT<span>LAB</span></div>
+  <div class="loading-spinner"></div>
+</div>
+
 <!-- SPLASH -->
-<div class="screen active" id="splash">
+<div class="screen" id="splash">
   <div class="splash-grid"></div>
   <div class="splash-content">
     <div class="splash-logo">LIFT<span>LAB</span></div>
     <div class="splash-sub">AI-Powered Training</div>
-    <button class="splash-btn splash-btn-primary" onclick="showOnboarding()">GET STARTED</button>
-    <button class="splash-btn splash-btn-secondary" onclick="loadExistingUser()">I HAVE AN ACCOUNT</button>
+
+    <!-- Google Sign In -->
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Continue with Google
+    </button>
+
+    <div class="auth-divider" style="max-width:320px;margin:0 auto 12px">or</div>
+
+    <!-- Email Auth -->
+    <div class="auth-email-form" id="emailAuthForm">
+      <input class="field-input" type="email" id="authEmail" placeholder="Email address" autocomplete="email">
+      <input class="field-input" type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
+      <div class="auth-error" id="authError"></div>
+      <button class="splash-btn splash-btn-primary" style="max-width:320px" onclick="signInWithEmail()" id="emailSignInBtn">SIGN IN</button>
+      <button class="splash-btn splash-btn-secondary" style="max-width:320px" onclick="signUpWithEmail()" id="emailSignUpBtn">CREATE ACCOUNT</button>
+      <button class="auth-toggle" onclick="toggleAuthMode()" id="authToggle">Don't have an account? Sign up</button>
+    </div>
+
   </div>
 </div>
 
@@ -1665,6 +1757,18 @@ select.field-input { appearance: none; }
       <div class="profile-row"><span class="pr-label">Bench 1RM (est.)</span><span class="pr-val" id="pr-bench">—</span></div>
     </div>
     <div class="profile-section">
+      <div class="profile-section-title">ACCOUNT</div>
+      <div class="profile-row">
+        <span class="pr-label">Email</span>
+        <span class="pr-val" id="pr-email" style="font-size:12px">—</span>
+      </div>
+      <div class="profile-row">
+        <span class="pr-label">Sync</span>
+        <span class="sync-badge">☁️ Cloud Saved</span>
+      </div>
+    </div>
+    <div class="profile-section">
+      <button class="danger-btn" style="margin-bottom:10px" onclick="signOutUser()">SIGN OUT</button>
       <button class="danger-btn" onclick="resetApp()">RESET & START OVER</button>
     </div>
   </div>
@@ -1764,6 +1868,127 @@ select.field-input { appearance: none; }
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, orderBy, limit, getDocs, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCrKbjExqlj6wuIySuieBosrEvz--2mZuM",
+  authDomain: "liftlab-c628c.firebaseapp.com",
+  projectId: "liftlab-c628c",
+  storageBucket: "liftlab-c628c.firebasestorage.app",
+  messagingSenderId: "947271811288",
+  appId: "1:947271811288:web:b177f598db8913072897ad",
+  measurementId: "G-68DXK120DJ"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+
+// Expose to global scope so non-module functions can call them
+window._fb = { auth, db, doc, setDoc, getDoc, collection, addDoc, query, orderBy, limit, getDocs, onSnapshot, serverTimestamp, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
+
+// Auth state listener
+onAuthStateChanged(auth, async (user) => {
+  document.getElementById('authLoading').style.display = 'none';
+  if (user) {
+    window._fbUser = user;
+    // Try to load their saved state from Firestore
+    await loadFromFirestore(user.uid);
+    // If no profile yet, show onboarding — else show app
+    if (state.user) {
+      showApp();
+    } else {
+      showOnboarding();
+    }
+    // Start Pit listener
+    startPitListener();
+  } else {
+    window._fbUser = null;
+    showScreen('splash');
+  }
+});
+
+async function loadFromFirestore(uid) {
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      state = Object.assign({ user: null, workouts: [], history: [], prs: {}, actualWeights: {} }, data);
+    }
+  } catch (e) {
+    console.warn('Firestore load failed, using local:', e);
+    // Fall back to localStorage
+    try {
+      const saved = localStorage.getItem('liftlab-state');
+      if (saved) state = JSON.parse(saved);
+    } catch {}
+  }
+}
+
+window._saveToFirestore = async function() {
+  const user = window._fbUser;
+  if (!user) return;
+  try {
+    await setDoc(doc(db, 'users', user.uid), state);
+  } catch (e) {
+    console.warn('Firestore save failed:', e);
+  }
+};
+
+// Post to shared Pit feed in Firestore
+window._postToPitFirestore = async function(item) {
+  try {
+    await addDoc(collection(db, 'pit_feed'), {
+      ...item,
+      timestamp: serverTimestamp()
+    });
+  } catch (e) {
+    console.warn('Pit post failed:', e);
+  }
+};
+
+// Real-time Pit listener
+window._pitUnsub = null;
+function startPitListener() {
+  if (window._pitUnsub) window._pitUnsub();
+  try {
+    const q = query(collection(db, 'pit_feed'), orderBy('timestamp', 'desc'), limit(30));
+    window._pitUnsub = onSnapshot(q, (snap) => {
+      window._livePitFeed = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Re-render pit if it's active tab
+      if (document.getElementById('tab-pit')?.classList.contains('active')) {
+        renderPit();
+      }
+    });
+  } catch (e) {
+    console.warn('Pit listener failed:', e);
+  }
+}
+
+// Leaderboard in Firestore
+window._postLeaderboard = async function(name, initials, pts, workouts, prs) {
+  const week = getWeekKey();
+  try {
+    await setDoc(doc(db, 'leaderboard', week + '_' + name), {
+      name, initials, pts, workouts, prs, week,
+      timestamp: serverTimestamp()
+    }, { merge: true });
+  } catch(e) { console.warn('LB post failed:', e); }
+};
+
+window._getLeaderboard = async function() {
+  const week = getWeekKey();
+  try {
+    const q = query(collection(db, 'leaderboard'), orderBy('pts', 'desc'), limit(10));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => d.data()).filter(d => d.week === week);
+  } catch(e) { return []; }
+};
+</script>
 <script>
 // ═══════════════════════════════════════
 // STATE
@@ -1789,44 +2014,97 @@ let sessionStart = null;
 let currentSessionWorkout = null;
 
 // ═══════════════════════════════════════
-// INIT
+// INIT — Firebase handles auth state now
 // ═══════════════════════════════════════
 function init() {
-  try {
-    const saved = localStorage.getItem('liftlab-state');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Merge saved state into default state so new keys always exist
-      state = Object.assign({
-        user: null,
-        workouts: [],
-        history: [],
-        prs: {},
-        actualWeights: {}
-      }, parsed);
-      // Ensure sub-objects always exist even in old saves
-      if (!state.workouts) state.workouts = [];
-      if (!state.history) state.history = [];
-      if (!state.prs) state.prs = {};
-      if (!state.actualWeights) state.actualWeights = {};
-      if (state.user) {
-        showApp();
-        return;
-      }
-    }
-  } catch (e) {
-    console.warn('Failed to load saved state, starting fresh:', e);
-    localStorage.removeItem('liftlab-state');
-  }
-  showScreen('splash');
+  // Firebase onAuthStateChanged handles everything
+  // Just ensure authLoading shows while Firebase initializes
+  document.getElementById('authLoading').style.display = 'flex';
 }
 
 function save() {
+  // Save to both localStorage (fast) and Firestore (persistent)
   try {
     localStorage.setItem('liftlab-state', JSON.stringify(state));
+  } catch(e) {}
+  // Debounce Firestore saves to avoid hammering
+  clearTimeout(window._saveTimer);
+  window._saveTimer = setTimeout(() => {
+    if (window._saveToFirestore) window._saveToFirestore();
+  }, 1500);
+}
+
+// ═══════════════════════════════════════
+// AUTH FUNCTIONS
+// ═══════════════════════════════════════
+let authMode = 'signin'; // 'signin' or 'signup'
+
+function toggleAuthMode() {
+  authMode = authMode === 'signin' ? 'signup' : 'signin';
+  const toggle = document.getElementById('authToggle');
+  const signInBtn = document.getElementById('emailSignInBtn');
+  const signUpBtn = document.getElementById('emailSignUpBtn');
+  if (authMode === 'signup') {
+    signInBtn.style.display = 'none';
+    signUpBtn.style.display = 'block';
+    toggle.textContent = 'Already have an account? Sign in';
+  } else {
+    signInBtn.style.display = 'block';
+    signUpBtn.style.display = 'none';
+    toggle.textContent = "Don't have an account? Sign up";
+  }
+  document.getElementById('authError').textContent = '';
+}
+
+async function signInWithGoogle() {
+  if (!window._fb) { showToast('Loading...'); return; }
+  try {
+    const provider = new window._fb.GoogleAuthProvider();
+    await window._fb.signInWithPopup(window._fb.auth, provider);
+    // onAuthStateChanged handles the rest
   } catch (e) {
-    console.warn('Failed to save state:', e);
-    showToast('Storage full — clear some space on your device');
+    document.getElementById('authError').textContent = e.message;
+  }
+}
+
+async function signInWithEmail() {
+  if (!window._fb) { showToast('Loading...'); return; }
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Please enter email and password.'; return; }
+  try {
+    await window._fb.signInWithEmailAndPassword(window._fb.auth, email, pass);
+  } catch (e) {
+    errEl.textContent = e.code === 'auth/user-not-found' ? 'No account found. Sign up instead?' :
+                        e.code === 'auth/wrong-password' ? 'Wrong password.' : e.message;
+  }
+}
+
+async function signUpWithEmail() {
+  if (!window._fb) { showToast('Loading...'); return; }
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Please enter email and password.'; return; }
+  if (pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+  try {
+    await window._fb.createUserWithEmailAndPassword(window._fb.auth, email, pass);
+    // onAuthStateChanged fires → new user → show onboarding
+  } catch (e) {
+    errEl.textContent = e.code === 'auth/email-already-in-use' ? 'Account already exists. Sign in instead.' : e.message;
+  }
+}
+
+async function signOutUser() {
+  if (!window._fb) return;
+  if (confirm('Sign out of LiftLab?')) {
+    if (window._pitUnsub) window._pitUnsub();
+    await window._fb.signOut(window._fb.auth);
+    state = { user: null, workouts: [], history: [], prs: {}, actualWeights: {} };
+    localStorage.removeItem('liftlab-state');
   }
 }
 
@@ -1994,6 +2272,9 @@ function refreshUI() {
   document.getElementById('pr-exp').textContent = expMap[u.experience] || '—';
   document.getElementById('pr-equip').textContent = equipMap[u.equipment] || '—';
   document.getElementById('pr-bench').textContent = u.bench1rm ? `${u.bench1rm} lbs` : '—';
+  // Firebase email
+  const emailEl = document.getElementById('pr-email');
+  if (emailEl && window._fbUser) emailEl.textContent = window._fbUser.email || '—';
 
   // Stats
   const totalPRs = Object.keys(state.prs).length;
@@ -2931,23 +3212,19 @@ function postToPit(type, data1, data2) {
   const feed = getPitFeed();
   const lb = getLeaderboard();
 
-  // Build message
   let text = '', emoji = '', points = 0;
   if (type === 'workout') {
-    text = `<strong>${u.name}</strong> just crushed <span class="highlight">${data1}</span> — ${data2} exercises done 💪`;
-    emoji = '💪';
-    points = 10;
+    text = `<strong>${u.name}</strong> just crushed <span class="highlight">${data1}</span> — ${data2} sets done 💪`;
+    emoji = '💪'; points = 10;
   } else if (type === 'pr') {
     text = `<strong>${u.name}</strong> hit a new PR on <span class="highlight">${data1}</span> — <span class="highlight">${data2} lbs</span> 🏆`;
-    emoji = '🏆';
-    points = 25;
+    emoji = '🏆'; points = 25;
   } else if (type === 'streak') {
     text = `<strong>${u.name}</strong> is on a <span class="highlight">${data1}-day streak</span> 🔥`;
-    emoji = '🔥';
-    points = 15;
+    emoji = '🔥'; points = 15;
   }
 
-  feed.push({
+  const item = {
     id: Date.now(),
     type,
     name: u.name,
@@ -2955,10 +3232,16 @@ function postToPit(type, data1, data2) {
     text,
     emoji,
     time: new Date().toISOString(),
-  });
+  };
+
+  // Local feed
+  feed.push(item);
   savePitFeed(feed);
 
-  // Update leaderboard
+  // Firestore — live for everyone
+  if (window._postToPitFirestore) window._postToPitFirestore(item);
+
+  // Update leaderboard locally
   const week = getWeekKey();
   if (!lb[week]) lb[week] = {};
   if (!lb[week][u.name]) lb[week][u.name] = { name: u.name, initials: u.name[0].toUpperCase(), pts: 0, workouts: 0, prs: 0 };
@@ -2966,6 +3249,12 @@ function postToPit(type, data1, data2) {
   if (type === 'workout') lb[week][u.name].workouts++;
   if (type === 'pr') lb[week][u.name].prs++;
   saveLeaderboard(lb);
+
+  // Firestore leaderboard
+  if (window._postLeaderboard) {
+    const myLb = lb[week][u.name];
+    window._postLeaderboard(u.name, u.name[0].toUpperCase(), myLb.pts, myLb.workouts, myLb.prs);
+  }
 }
 
 function getWeekKey() {
@@ -2983,21 +3272,27 @@ function timeAgo(dateStr) {
   return `${Math.floor(diff/86400)}d ago`;
 }
 
-function renderPit() {
+async function renderPit() {
   const el = document.getElementById('pitContent');
-  const feed = getPitFeed();
-  const lb = getLeaderboard();
-  const week = getWeekKey();
-  const weekData = lb[week] || {};
   const u = state.user;
 
-  // Sort leaderboard
-  const ranked = Object.values(weekData).sort((a, b) => b.pts - a.pts);
-  const rankIcons = ['gold', 'silver', 'bronze'];
+  // Use live Firestore feed if available, fallback to local
+  const feed = window._livePitFeed || getPitFeed();
 
+  // Get leaderboard — try Firestore first
+  let ranked = [];
+  if (window._getLeaderboard) {
+    ranked = await window._getLeaderboard();
+  }
+  if (!ranked.length) {
+    const lb = getLeaderboard();
+    const week = getWeekKey();
+    ranked = Object.values(lb[week] || {}).sort((a, b) => b.pts - a.pts);
+  }
+
+  const rankIcons = ['gold', 'silver', 'bronze'];
   let html = '';
 
-  // Share button
   html += `<div style="padding:16px 20px 0">
     <button class="pit-share-btn" onclick="shareToFeed()">📢 SHARE YOUR WORKOUT</button>
   </div>`;
@@ -3005,30 +3300,22 @@ function renderPit() {
   // Weekly leaderboard
   if (ranked.length) {
     html += `<div class="pit-leaderboard">
-      <div class="pit-lb-header">
-        THIS WEEK'S LEADERBOARD
-        <span class="pit-lb-week">Resets Monday</span>
-      </div>`;
+      <div class="pit-lb-header">THIS WEEK'S LEADERBOARD<span class="pit-lb-week">Resets Monday</span></div>`;
     ranked.slice(0, 5).forEach((entry, i) => {
       const isMe = u && entry.name === u.name;
-      const rankClass = rankIcons[i] || '';
       html += `<div class="pit-lb-row ${isMe ? 'me' : ''}">
-        <div class="pit-lb-rank ${rankClass}">${i + 1}</div>
-        <div class="pit-lb-avatar">${entry.initials}</div>
+        <div class="pit-lb-rank ${rankIcons[i] || ''}">${i + 1}</div>
+        <div class="pit-lb-avatar">${entry.initials || entry.name?.[0] || '?'}</div>
         <div class="pit-lb-info">
           <div class="pit-lb-name">${entry.name}${isMe ? ' (you)' : ''}</div>
           <div class="pit-lb-detail">${entry.workouts || 0} workouts · ${entry.prs || 0} PRs</div>
         </div>
-        <div>
-          <div class="pit-lb-pts">${entry.pts}</div>
-          <div class="pit-lb-pts-label">pts</div>
-        </div>
+        <div><div class="pit-lb-pts">${entry.pts}</div><div class="pit-lb-pts-label">pts</div></div>
       </div>`;
     });
     html += '</div>';
   }
 
-  // Points guide
   html += `<div style="margin:0 20px 16px;background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:12px 14px">
     <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">HOW TO EARN POINTS</div>
     <div style="font-size:13px;color:var(--text2);display:flex;flex-direction:column;gap:4px">
@@ -3039,15 +3326,16 @@ function renderPit() {
   </div>`;
 
   // Activity feed
-  if (feed.length) {
-    html += `<div class="pit-feed">
-      <div class="pit-feed-title">ACTIVITY FEED</div>`;
-    feed.slice().reverse().slice(0, 20).forEach(item => {
+  const feedItems = Array.isArray(feed) ? feed : [];
+  if (feedItems.length) {
+    html += `<div class="pit-feed"><div class="pit-feed-title">ACTIVITY FEED</div>`;
+    feedItems.slice(0, 20).forEach(item => {
+      const timeStr = item.time ? timeAgo(item.time) : item.timestamp ? timeAgo(item.timestamp?.toDate?.()?.toISOString() || item.timestamp) : 'recently';
       html += `<div class="pit-feed-item">
-        <div class="pit-feed-avatar">${item.initials || '?'}</div>
+        <div class="pit-feed-avatar">${item.initials || item.name?.[0] || '?'}</div>
         <div class="pit-feed-content">
           <div class="pit-feed-text">${item.text}</div>
-          <div class="pit-feed-time">${timeAgo(item.time)}</div>
+          <div class="pit-feed-time">${timeStr}</div>
         </div>
         <div class="pit-feed-emoji">${item.emoji}</div>
       </div>`;
@@ -3231,9 +3519,16 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+function loadExistingUser() {
+  // Firebase handles this via onAuthStateChanged
+  showToast('Signing you in...');
+}
+
 function resetApp() {
   if (confirm('Reset everything? This will delete all your workouts and history.')) {
+    state = { user: null, workouts: [], history: [], prs: {}, actualWeights: {} };
     localStorage.removeItem('liftlab-state');
+    if (window._saveToFirestore) window._saveToFirestore();
     location.reload();
   }
 }
