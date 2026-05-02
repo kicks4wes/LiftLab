@@ -109,15 +109,22 @@ html, body {
   gap: 16px;
 }
 .back-btn {
-  width: 40px; height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 1px solid var(--border2);
   background: var(--card);
   color: var(--text);
   font-size: 20px;
   cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(200,245,66,0.2);
+  user-select: none;
+  -webkit-user-select: none;
 }
 .step-indicator {
   flex: 1;
@@ -763,8 +770,10 @@ select.field-input { appearance: none; }
   display: none;
   flex-direction: column;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 #workout-session.open { display: flex; }
+#workout-session * { -webkit-tap-highlight-color: transparent; }
 
 .session-header {
   background: var(--surface);
@@ -773,7 +782,10 @@ select.field-input { appearance: none; }
   display: flex;
   align-items: center;
   gap: 14px;
-  position: sticky; top: 0; z-index: 10;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  touch-action: manipulation;
 }
 .session-title { flex: 1; }
 .session-title h2 {
@@ -1887,7 +1899,7 @@ select.field-input { appearance: none; }
 <!-- ACTIVE WORKOUT SESSION -->
 <div id="workout-session">
   <div class="session-header">
-    <button class="back-btn" id="sessionBackBtn">←</button>
+    <button class="back-btn" id="sessionBackBtn" onclick="closeSessionWithConfirm()" style="-webkit-tap-highlight-color:rgba(0,0,0,0);cursor:pointer;">←</button>
     <div class="session-title">
       <h2 id="sessionName">Workout</h2>
       <p id="sessionMeta">0 exercises</p>
