@@ -1423,19 +1423,42 @@ let currentSessionWorkout = null;
 // INIT
 // ═══════════════════════════════════════
 function init() {
-  const saved = localStorage.getItem('liftlab-state');
-  if (saved) {
-    state = JSON.parse(saved);
-    if (state.user) {
-      showApp();
-      return;
+  try {
+    const saved = localStorage.getItem('liftlab-state');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Merge saved state into default state so new keys always exist
+      state = Object.assign({
+        user: null,
+        workouts: [],
+        history: [],
+        prs: {},
+        actualWeights: {}
+      }, parsed);
+      // Ensure sub-objects always exist even in old saves
+      if (!state.workouts) state.workouts = [];
+      if (!state.history) state.history = [];
+      if (!state.prs) state.prs = {};
+      if (!state.actualWeights) state.actualWeights = {};
+      if (state.user) {
+        showApp();
+        return;
+      }
     }
+  } catch (e) {
+    console.warn('Failed to load saved state, starting fresh:', e);
+    localStorage.removeItem('liftlab-state');
   }
   showScreen('splash');
 }
 
 function save() {
-  localStorage.setItem('liftlab-state', JSON.stringify(state));
+  try {
+    localStorage.setItem('liftlab-state', JSON.stringify(state));
+  } catch (e) {
+    console.warn('Failed to save state:', e);
+    showToast('Storage full — clear some space on your device');
+  }
 }
 
 // ═══════════════════════════════════════
@@ -1453,10 +1476,19 @@ function showOnboarding() {
 }
 
 function loadExistingUser() {
-  const saved = localStorage.getItem('liftlab-state');
-  if (saved) {
-    state = JSON.parse(saved);
-    if (state.user) { showApp(); return; }
+  try {
+    const saved = localStorage.getItem('liftlab-state');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state = Object.assign({ user: null, workouts: [], history: [], prs: {}, actualWeights: {} }, parsed);
+      if (!state.workouts) state.workouts = [];
+      if (!state.history) state.history = [];
+      if (!state.prs) state.prs = {};
+      if (!state.actualWeights) state.actualWeights = {};
+      if (state.user) { showApp(); return; }
+    }
+  } catch (e) {
+    console.warn('Load failed:', e);
   }
   showToast('No account found — let\'s set you up!');
   showOnboarding();
@@ -1532,14 +1564,16 @@ function completeOnboarding() {
   let bench1rm = null;
   if (benchRaw) {
     const b = parseFloat(benchRaw);
+    // Epley formula conversions
     if (benchType === '1rm') bench1rm = Math.round(b);
-    else if (benchType === '2rm') bench1rm = Math.round(b * 1.03);
-    else if (benchType === '5rm') bench1rm = Math.round(b * 1.13);
+    else if (benchType === '2rm') bench1rm = Math.round(b * 1.033); // 2RM → 1RM
+    else if (benchType === '5rm') bench1rm = Math.round(b * 1.128); // 5RM → 1RM
   }
 
   state.user = {
-    name, age: parseInt(age) || null,
-    height: ft && inches ? `${ft}'${inches}"` : null,
+    name,
+    age: parseInt(age) || null,
+    height: (ft && inches !== '') ? `${ft}'${inches}"` : (ft ? `${ft}'0"` : null),
     heightIn: ft ? parseInt(ft) * 12 + (parseInt(inches) || 0) : null,
     weight: parseFloat(weight) || null,
     goal: selectedGoal || 'muscle_gain',
@@ -1549,9 +1583,14 @@ function completeOnboarding() {
     bench1rm,
     createdAt: new Date().toISOString()
   };
-  state.workouts = [];
-  state.history = [];
-  state.prs = {};
+
+  // Only reset workouts/history if this is a brand new user
+  // (preserve data if someone is editing their profile)
+  if (!state.workouts) state.workouts = [];
+  if (!state.history) state.history = [];
+  if (!state.prs) state.prs = {};
+  if (!state.actualWeights) state.actualWeights = {};
+
   save();
   showApp();
 }
@@ -2331,3 +2370,4 @@ init();
 </script>
 </body>
 </html>
+
