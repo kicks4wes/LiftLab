@@ -957,8 +957,311 @@ select.field-input { appearance: none; }
   margin-left: 8px;
 }
 
-/* Actual weight logged indicator */
-.wt-logged { border-color: var(--accent) !important; }
+/* ─── STRENGTH CHARTS ─── */
+.chart-tab-bar {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.chart-tab-bar::-webkit-scrollbar { display: none; }
+.chart-tab-pill {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--card);
+  color: var(--text2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.chart-tab-pill.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+.chart-container {
+  margin: 16px 20px;
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.chart-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.chart-subtitle { font-size: 12px; color: var(--text2); margin-bottom: 16px; }
+.chart-canvas-wrap { position: relative; height: 180px; }
+.chart-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text3);
+}
+.chart-empty .ce-icon { font-size: 36px; margin-bottom: 12px; }
+.chart-empty p { font-size: 13px; line-height: 1.5; }
+
+.pr-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 20px 20px;
+}
+.pr-card {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 14px;
+}
+.pr-card-ex { font-size: 11px; color: var(--text2); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-card-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+}
+.pr-card-unit { font-size: 12px; color: var(--text3); }
+
+/* ─── PR CELEBRATION ─── */
+#pr-celebration {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 500;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+}
+#pr-celebration.show { display: flex; }
+.pr-cel-emoji { font-size: 80px; margin-bottom: 16px; animation: popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275) both; }
+.pr-cel-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 56px;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: 2px;
+  line-height: 1;
+  margin-bottom: 8px;
+  animation: slideUp 0.4s ease 0.2s both;
+}
+.pr-cel-sub {
+  font-size: 18px;
+  color: var(--text2);
+  margin-bottom: 6px;
+  animation: slideUp 0.4s ease 0.3s both;
+}
+.pr-cel-weight {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 42px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 32px;
+  animation: slideUp 0.4s ease 0.4s both;
+}
+.pr-cel-actions { display: flex; gap: 12px; animation: slideUp 0.4s ease 0.5s both; }
+.pr-cel-btn {
+  padding: 14px 24px;
+  border-radius: 10px;
+  border: none;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+.pr-cel-btn-share { background: var(--accent); color: #000; }
+.pr-cel-btn-close { background: var(--card2); color: var(--text); border: 1px solid var(--border2); }
+@keyframes popIn { from { transform: scale(0) rotate(-20deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ─── WEEKLY PROGRAM ─── */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  padding: 0 20px 16px;
+}
+.week-day {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 8px 4px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.week-day.has-workout { border-color: var(--accent-dim); }
+.week-day.today { border-color: var(--accent); background: #1a2200; }
+.week-day.completed { background: #0a1400; }
+.week-day-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text3); margin-bottom: 4px; }
+.week-day-icon { font-size: 16px; }
+.week-day-name { font-size: 8px; color: var(--text2); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ─── THE PIT ─── */
+.pit-header {
+  padding: 20px 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pit-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+.pit-title span { color: var(--accent); }
+.pit-live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--red);
+  letter-spacing: 1px;
+}
+.pit-live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.pit-leaderboard {
+  margin: 16px 20px;
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.pit-lb-header {
+  background: linear-gradient(135deg, #1a2200, #0f1800);
+  padding: 12px 16px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--accent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.pit-lb-week { font-size: 11px; color: var(--accent-dim); font-family: 'DM Sans', sans-serif; font-weight: 600; letter-spacing: 0; }
+.pit-lb-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.pit-lb-row:last-child { border-bottom: none; }
+.pit-lb-row.me { background: #0f1800; }
+.pit-lb-rank {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text3);
+  min-width: 24px;
+}
+.pit-lb-rank.gold { color: #ffd700; }
+.pit-lb-rank.silver { color: #c0c0c0; }
+.pit-lb-rank.bronze { color: #cd7f32; }
+.pit-lb-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--card2);
+  border: 2px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.pit-lb-row.me .pit-lb-avatar { border-color: var(--accent); background: #1a2200; color: var(--accent); }
+.pit-lb-info { flex: 1; }
+.pit-lb-name { font-size: 14px; font-weight: 600; }
+.pit-lb-detail { font-size: 11px; color: var(--text2); margin-top: 1px; }
+.pit-lb-pts {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent);
+}
+.pit-lb-pts-label { font-size: 9px; color: var(--text3); text-align: right; }
+
+.pit-feed { padding: 0 20px 20px; }
+.pit-feed-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 12px;
+}
+.pit-feed-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.pit-feed-item:last-child { border-bottom: none; }
+.pit-feed-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  flex-shrink: 0;
+  color: var(--text2);
+}
+.pit-feed-content { flex: 1; }
+.pit-feed-text { font-size: 14px; line-height: 1.4; }
+.pit-feed-text strong { color: var(--text); }
+.pit-feed-text .highlight { color: var(--accent); font-weight: 700; }
+.pit-feed-time { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.pit-feed-emoji { font-size: 22px; flex-shrink: 0; }
+
+.pit-share-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--accent-dim);
+  background: #0f1800;
+  color: var(--accent);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pit-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text3);
+}
+.pit-empty .pe-icon { font-size: 48px; margin-bottom: 12px; }
+.pit-empty h3 { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 800; color: var(--text2); margin-bottom: 8px; }
+.pit-empty p { font-size: 13px; line-height: 1.5; }
 
 .rest-timer-bar {
   display: none;
@@ -1280,6 +1583,56 @@ select.field-input { appearance: none; }
     </div>
   </div>
 
+  <!-- HISTORY TAB -->
+  <div class="tab-content" id="tab-history">
+    <div style="padding:20px 20px 0">
+      <div class="section-title" style="margin-bottom:16px">WORKOUT HISTORY</div>
+    </div>
+    <div id="historyList">
+      <div class="history-empty">
+        <div class="he-icon">📋</div>
+        <h3>NO HISTORY YET</h3>
+        <p>Complete your first workout and it'll show up here.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS TAB -->
+  <div class="tab-content" id="tab-charts">
+    <div style="padding:20px 20px 0;display:flex;justify-content:space-between;align-items:center">
+      <div class="section-title">STRENGTH PROGRESS</div>
+    </div>
+    <div class="chart-tab-bar" id="chartExList"></div>
+    <div class="chart-container">
+      <div class="chart-title" id="chartExName">Select an exercise</div>
+      <div class="chart-subtitle" id="chartExSub">Tap an exercise above to see your progress</div>
+      <div class="chart-canvas-wrap">
+        <canvas id="strengthChart"></canvas>
+        <div class="chart-empty" id="chartEmpty">
+          <div class="ce-icon">📈</div>
+          <p>Log some workouts and your strength curve will appear here.</p>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0 20px 8px">
+      <div class="section-title" style="font-size:16px">PERSONAL RECORDS</div>
+    </div>
+    <div class="pr-grid" id="prGrid">
+      <div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text3);font-size:13px">
+        Complete workouts to see your PRs here.
+      </div>
+    </div>
+  </div>
+
+  <!-- THE PIT TAB -->
+  <div class="tab-content" id="tab-pit">
+    <div class="pit-header">
+      <div class="pit-title">THE <span>PIT</span></div>
+      <div class="pit-live"><div class="pit-live-dot"></div>LIVE</div>
+    </div>
+    <div id="pitContent"></div>
+  </div>
+
   <!-- PROFILE TAB -->
   <div class="tab-content" id="tab-profile">
     <div class="profile-header">
@@ -1321,8 +1674,11 @@ select.field-input { appearance: none; }
     <button class="tab-btn active" onclick="switchTab('home')" id="tab-btn-home">
       <span class="tab-icon">🏠</span>Home
     </button>
-    <button class="tab-btn" onclick="switchTab('history')" id="tab-btn-history">
-      <span class="tab-icon">📋</span>History
+    <button class="tab-btn" onclick="switchTab('charts')" id="tab-btn-charts">
+      <span class="tab-icon">📈</span>Progress
+    </button>
+    <button class="tab-btn" onclick="switchTab('pit')" id="tab-btn-pit">
+      <span class="tab-icon">🔥</span>The Pit
     </button>
     <button class="tab-btn" onclick="switchTab('profile')" id="tab-btn-profile">
       <span class="tab-icon">👤</span>Profile
@@ -1392,9 +1748,22 @@ select.field-input { appearance: none; }
   <div class="session-body" id="sessionBody"></div>
 </div>
 
+<!-- PR CELEBRATION -->
+<div id="pr-celebration">
+  <div class="pr-cel-emoji">🏆</div>
+  <div class="pr-cel-title">NEW PR!</div>
+  <div class="pr-cel-sub" id="prCelEx">Barbell Bench Press</div>
+  <div class="pr-cel-weight" id="prCelWeight">245 lbs</div>
+  <div class="pr-cel-actions">
+    <button class="pr-cel-btn pr-cel-btn-share" onclick="sharePR()">📤 SHARE TO PIT</button>
+    <button class="pr-cel-btn pr-cel-btn-close" onclick="closePRCelebration()">CLOSE</button>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
 // ═══════════════════════════════════════
 // STATE
@@ -1637,6 +2006,7 @@ function refreshUI() {
 
   renderWorkouts();
   renderHistory();
+  setTimeout(renderWeeklyProgram, 100);
 }
 
 function calcStreak() {
@@ -2374,8 +2744,486 @@ function closeSession() {
 }
 
 // ═══════════════════════════════════════
-// UTILS
+// STRENGTH CHARTS
 // ═══════════════════════════════════════
+let strengthChart = null;
+let activeChartEx = null;
+
+function renderChartsTab() {
+  // Build exercise pill list from PRs and actual weights
+  const exercises = Object.keys(state.prs || {});
+  const exList = document.getElementById('chartExList');
+  const prGrid = document.getElementById('prGrid');
+
+  if (!exercises.length) {
+    exList.innerHTML = '';
+    prGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text3);font-size:13px">Complete workouts to see your PRs here.</div>';
+    document.getElementById('chartEmpty').style.display = 'block';
+    if (strengthChart) { strengthChart.destroy(); strengthChart = null; }
+    return;
+  }
+
+  exList.innerHTML = exercises.map(ex =>
+    `<button class="chart-tab-pill ${ex === activeChartEx ? 'active' : ''}" onclick="selectChartEx('${ex.replace(/'/g,"\\'")}')">
+      ${ex.split(' ').slice(0,2).join(' ')}
+    </button>`
+  ).join('');
+
+  // PR grid
+  prGrid.innerHTML = exercises.slice(0, 6).map(ex => `
+    <div class="pr-card">
+      <div class="pr-card-ex">${ex}</div>
+      <div class="pr-card-val">${state.prs[ex]}<span class="pr-card-unit"> lbs</span></div>
+    </div>
+  `).join('');
+
+  if (!activeChartEx && exercises.length) selectChartEx(exercises[0]);
+  else if (activeChartEx) renderChart(activeChartEx);
+}
+
+function selectChartEx(exName) {
+  activeChartEx = exName;
+  document.querySelectorAll('.chart-tab-pill').forEach(p => {
+    p.classList.toggle('active', p.textContent.trim() === exName.split(' ').slice(0,2).join(' '));
+  });
+  renderChart(exName);
+}
+
+function renderChart(exName) {
+  document.getElementById('chartExName').textContent = exName;
+
+  // Build data from history - find sessions where this exercise was logged
+  const data = buildChartData(exName);
+
+  if (!data.labels.length) {
+    document.getElementById('chartEmpty').style.display = 'block';
+    document.getElementById('chartExSub').textContent = 'No data yet — log a workout to start tracking';
+    if (strengthChart) { strengthChart.destroy(); strengthChart = null; }
+    return;
+  }
+
+  document.getElementById('chartEmpty').style.display = 'none';
+  document.getElementById('chartExSub').textContent = `PR: ${Math.max(...data.values)} lbs · ${data.labels.length} sessions logged`;
+
+  const ctx = document.getElementById('strengthChart').getContext('2d');
+  if (strengthChart) strengthChart.destroy();
+
+  strengthChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: [{
+        data: data.values,
+        borderColor: '#c8f542',
+        backgroundColor: 'rgba(200,245,66,0.08)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#c8f542',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#1a1a1a',
+        borderColor: '#2a2a2a',
+        borderWidth: 1,
+        titleColor: '#999',
+        bodyColor: '#c8f542',
+        bodyFont: { family: 'Barlow Condensed', size: 18, weight: '800' },
+        callbacks: { label: ctx => `${ctx.raw} lbs` }
+      }},
+      scales: {
+        x: { grid: { color: '#1f1f1f' }, ticks: { color: '#555', font: { size: 10 } } },
+        y: { grid: { color: '#1f1f1f' }, ticks: { color: '#555', font: { size: 10 }, callback: v => v + ' lbs' } }
+      }
+    }
+  });
+}
+
+function buildChartData(exName) {
+  // Pull from actualWeights log — simplified: use history + prs
+  const labels = [];
+  const values = [];
+
+  // Use workout history to estimate — in real version this would be per-set logs
+  state.history.forEach(h => {
+    if (h.weightLog && h.weightLog[exName]) {
+      labels.push(new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+      values.push(h.weightLog[exName]);
+    }
+  });
+
+  // Always add current PR as latest point if we have data
+  if (state.prs[exName] && !values.includes(state.prs[exName])) {
+    labels.push('Now');
+    values.push(state.prs[exName]);
+  }
+
+  return { labels, values };
+}
+
+// ═══════════════════════════════════════
+// PR CELEBRATION
+// ═══════════════════════════════════════
+let currentPRData = null;
+
+function showPRCelebration(exName, weight) {
+  currentPRData = { exName, weight };
+  document.getElementById('prCelEx').textContent = exName;
+  document.getElementById('prCelWeight').textContent = `${weight} lbs`;
+  document.getElementById('pr-celebration').classList.add('show');
+  // Auto-post to pit after 3 seconds if not shared manually
+  setTimeout(() => {
+    if (document.getElementById('pr-celebration').classList.contains('show')) {
+      postToPit('pr', exName, weight);
+    }
+  }, 4000);
+}
+
+function closePRCelebration() {
+  document.getElementById('pr-celebration').classList.remove('show');
+  currentPRData = null;
+}
+
+function sharePR() {
+  if (currentPRData) {
+    postToPit('pr', currentPRData.exName, currentPRData.weight);
+    showToast('🔥 Shared to The Pit!');
+  }
+  closePRCelebration();
+}
+
+// ═══════════════════════════════════════
+// THE PIT — COMMUNITY FEED
+// ═══════════════════════════════════════
+const PIT_KEY = 'liftlab-pit-feed';
+const LEADERBOARD_KEY = 'liftlab-pit-lb';
+
+function getPitFeed() {
+  try {
+    return JSON.parse(localStorage.getItem(PIT_KEY) || '[]');
+  } catch { return []; }
+}
+
+function savePitFeed(feed) {
+  // Keep last 50 items
+  localStorage.setItem(PIT_KEY, JSON.stringify(feed.slice(-50)));
+}
+
+function getLeaderboard() {
+  try {
+    return JSON.parse(localStorage.getItem(LEADERBOARD_KEY) || '{}');
+  } catch { return {}; }
+}
+
+function saveLeaderboard(lb) {
+  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(lb));
+}
+
+function postToPit(type, data1, data2) {
+  const u = state.user;
+  if (!u) return;
+
+  const feed = getPitFeed();
+  const lb = getLeaderboard();
+
+  // Build message
+  let text = '', emoji = '', points = 0;
+  if (type === 'workout') {
+    text = `<strong>${u.name}</strong> just crushed <span class="highlight">${data1}</span> — ${data2} exercises done 💪`;
+    emoji = '💪';
+    points = 10;
+  } else if (type === 'pr') {
+    text = `<strong>${u.name}</strong> hit a new PR on <span class="highlight">${data1}</span> — <span class="highlight">${data2} lbs</span> 🏆`;
+    emoji = '🏆';
+    points = 25;
+  } else if (type === 'streak') {
+    text = `<strong>${u.name}</strong> is on a <span class="highlight">${data1}-day streak</span> 🔥`;
+    emoji = '🔥';
+    points = 15;
+  }
+
+  feed.push({
+    id: Date.now(),
+    type,
+    name: u.name,
+    initials: u.name[0].toUpperCase(),
+    text,
+    emoji,
+    time: new Date().toISOString(),
+  });
+  savePitFeed(feed);
+
+  // Update leaderboard
+  const week = getWeekKey();
+  if (!lb[week]) lb[week] = {};
+  if (!lb[week][u.name]) lb[week][u.name] = { name: u.name, initials: u.name[0].toUpperCase(), pts: 0, workouts: 0, prs: 0 };
+  lb[week][u.name].pts += points;
+  if (type === 'workout') lb[week][u.name].workouts++;
+  if (type === 'pr') lb[week][u.name].prs++;
+  saveLeaderboard(lb);
+}
+
+function getWeekKey() {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const week = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+  return `${now.getFullYear()}-W${week}`;
+}
+
+function timeAgo(dateStr) {
+  const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return `${Math.floor(diff/86400)}d ago`;
+}
+
+function renderPit() {
+  const el = document.getElementById('pitContent');
+  const feed = getPitFeed();
+  const lb = getLeaderboard();
+  const week = getWeekKey();
+  const weekData = lb[week] || {};
+  const u = state.user;
+
+  // Sort leaderboard
+  const ranked = Object.values(weekData).sort((a, b) => b.pts - a.pts);
+  const rankIcons = ['gold', 'silver', 'bronze'];
+
+  let html = '';
+
+  // Share button
+  html += `<div style="padding:16px 20px 0">
+    <button class="pit-share-btn" onclick="shareToFeed()">📢 SHARE YOUR WORKOUT</button>
+  </div>`;
+
+  // Weekly leaderboard
+  if (ranked.length) {
+    html += `<div class="pit-leaderboard">
+      <div class="pit-lb-header">
+        THIS WEEK'S LEADERBOARD
+        <span class="pit-lb-week">Resets Monday</span>
+      </div>`;
+    ranked.slice(0, 5).forEach((entry, i) => {
+      const isMe = u && entry.name === u.name;
+      const rankClass = rankIcons[i] || '';
+      html += `<div class="pit-lb-row ${isMe ? 'me' : ''}">
+        <div class="pit-lb-rank ${rankClass}">${i + 1}</div>
+        <div class="pit-lb-avatar">${entry.initials}</div>
+        <div class="pit-lb-info">
+          <div class="pit-lb-name">${entry.name}${isMe ? ' (you)' : ''}</div>
+          <div class="pit-lb-detail">${entry.workouts || 0} workouts · ${entry.prs || 0} PRs</div>
+        </div>
+        <div>
+          <div class="pit-lb-pts">${entry.pts}</div>
+          <div class="pit-lb-pts-label">pts</div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  // Points guide
+  html += `<div style="margin:0 20px 16px;background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:12px 14px">
+    <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">HOW TO EARN POINTS</div>
+    <div style="font-size:13px;color:var(--text2);display:flex;flex-direction:column;gap:4px">
+      <span>💪 Complete a workout — <strong style="color:var(--accent)">+10 pts</strong></span>
+      <span>🏆 Hit a new PR — <strong style="color:var(--accent)">+25 pts</strong></span>
+      <span>🔥 Maintain a streak — <strong style="color:var(--accent)">+15 pts</strong></span>
+    </div>
+  </div>`;
+
+  // Activity feed
+  if (feed.length) {
+    html += `<div class="pit-feed">
+      <div class="pit-feed-title">ACTIVITY FEED</div>`;
+    feed.slice().reverse().slice(0, 20).forEach(item => {
+      html += `<div class="pit-feed-item">
+        <div class="pit-feed-avatar">${item.initials || '?'}</div>
+        <div class="pit-feed-content">
+          <div class="pit-feed-text">${item.text}</div>
+          <div class="pit-feed-time">${timeAgo(item.time)}</div>
+        </div>
+        <div class="pit-feed-emoji">${item.emoji}</div>
+      </div>`;
+    });
+    html += '</div>';
+  } else {
+    html += `<div class="pit-empty">
+      <div class="pe-icon">🔥</div>
+      <h3>THE PIT IS QUIET</h3>
+      <p>Complete a workout to be the first one in The Pit this week. Get after it.</p>
+    </div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+function shareToFeed() {
+  const u = state.user;
+  if (!u) return;
+  if (!state.history.length) {
+    showToast('Complete a workout first!');
+    return;
+  }
+  const last = state.history[state.history.length - 1];
+  postToPit('workout', last.name, last.sets);
+  renderPit();
+  showToast('🔥 Posted to The Pit!');
+}
+
+// ═══════════════════════════════════════
+// WEEKLY PROGRAM ON HOME
+// ═══════════════════════════════════════
+function renderWeeklyProgram() {
+  const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const today = new Date().getDay();
+
+  // Map workouts to days of week based on user's days per week
+  const daysPerWeek = state.user?.daysPerWeek || 4;
+  const workoutDays = getWorkoutDays(daysPerWeek);
+
+  const homeSec = document.getElementById('myWorkouts');
+  if (!state.workouts.length) return;
+
+  // Add week view above workouts
+  let weekHtml = '<div class="week-grid" style="margin-bottom:4px">';
+  days.forEach((day, i) => {
+    const isToday = i === today;
+    const isWorkoutDay = workoutDays.includes(i);
+    const completedToday = state.history.some(h => new Date(h.date).toDateString() === new Date().toDateString());
+    const workout = isWorkoutDay && state.workouts.length ? state.workouts[workoutDays.indexOf(i) % state.workouts.length] : null;
+    weekHtml += `<div class="week-day ${isToday ? 'today' : ''} ${workout ? 'has-workout' : ''} ${isToday && completedToday ? 'completed' : ''}">
+      <div class="week-day-label">${day}</div>
+      <div class="week-day-icon">${workout ? '🏋️' : isToday ? '📅' : '·'}</div>
+      <div class="week-day-name">${workout ? workout.muscle.split(' ')[0] : ''}</div>
+    </div>`;
+  });
+  weekHtml += '</div>';
+
+  // Prepend week grid before workouts section
+  const section = homeSec.closest('.section');
+  const existing = section.querySelector('.week-grid');
+  if (existing) existing.remove();
+  section.insertAdjacentHTML('afterbegin', weekHtml);
+}
+
+function getWorkoutDays(n) {
+  const patterns = {
+    3: [1, 3, 5],
+    4: [1, 2, 4, 5],
+    5: [1, 2, 3, 4, 5],
+    6: [1, 2, 3, 4, 5, 6],
+  };
+  return patterns[n] || patterns[4];
+}
+
+// ═══════════════════════════════════════
+// OVERRIDE switchTab TO RENDER NEW TABS
+// ═══════════════════════════════════════
+const _origSwitchTab = switchTab;
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const tc = document.getElementById('tab-' + tab);
+  const tb = document.getElementById('tab-btn-' + tab);
+  if (tc) tc.classList.add('active');
+  if (tb) tb.classList.add('active');
+  if (tab === 'charts') renderChartsTab();
+  if (tab === 'pit') renderPit();
+  if (tab === 'home') renderWeeklyProgram();
+}
+
+// ═══════════════════════════════════════
+// OVERRIDE finishSession TO POST TO PIT
+// ═══════════════════════════════════════
+const _origFinishSession = finishSession;
+function finishSession() {
+  const elapsed = Math.floor((Date.now() - sessionStart) / 1000 / 60);
+  clearInterval(sessionInterval);
+  Object.values(restTimers).forEach(t => clearInterval(t));
+
+  const checkedSets = document.querySelectorAll('.se-set-check.checked').length;
+
+  // Build weight log for chart data
+  const weightLog = {};
+  currentSessionWorkout.exercises.forEach((ex, i) => {
+    ex.sets.forEach((s, si) => {
+      const wtEl = document.getElementById(`wt-${i}-${si}`);
+      const chkEl = document.getElementById(`chk-${i}-${si}`);
+      if (wtEl && chkEl && chkEl.classList.contains('checked')) {
+        const wt = parseFloat(wtEl.value.replace(/[^0-9.]/g, ''));
+        if (!isNaN(wt) && wt > 0 && s.label !== 'Warm-up') {
+          if (!weightLog[ex.name] || wt > weightLog[ex.name]) {
+            weightLog[ex.name] = wt;
+          }
+        }
+      }
+    });
+  });
+
+  state.history.push({
+    name: currentSessionWorkout.name,
+    muscle: currentSessionWorkout.muscle,
+    date: new Date().toISOString(),
+    duration: elapsed || 1,
+    sets: checkedSets,
+    prs: 0,
+    weightLog
+  });
+  save();
+  closeSession();
+
+  // Post to The Pit automatically
+  postToPit('workout', currentSessionWorkout.name, checkedSets);
+
+  // Check streak milestone
+  const streak = calcStreak();
+  if (streak > 1 && streak % 3 === 0) {
+    postToPit('streak', streak, null);
+  }
+
+  showToast('Workout complete! Posted to The Pit 🔥');
+  refreshUI();
+  switchTab('home');
+}
+
+// ═══════════════════════════════════════
+// OVERRIDE checkSet TO SHOW PR CELEBRATION
+// ═══════════════════════════════════════
+const _origCheckSet = checkSet;
+function checkSet(exIdx, setIdx) {
+  const btn = document.getElementById(`chk-${exIdx}-${setIdx}`);
+  btn.classList.toggle('checked');
+  if (btn.classList.contains('checked')) {
+    const ex = currentSessionWorkout.exercises[exIdx];
+    const exName = ex.name;
+    const wtRaw = document.getElementById(`wt-${exIdx}-${setIdx}`).value;
+    const repsRaw = document.getElementById(`reps-${exIdx}-${setIdx}`).value;
+    const wt = parseFloat(wtRaw.replace(/[^0-9.]/g, ''));
+
+    if (!isNaN(wt) && wt > 0) {
+      const isPR = !state.prs[exName] || wt > state.prs[exName];
+      if (isPR && ex.sets[setIdx]?.label !== 'Warm-up') {
+        state.prs[exName] = wt;
+        save();
+        // Show celebration instead of just a toast
+        setTimeout(() => showPRCelebration(exName, wt), 400);
+      }
+      if (ex.sets[setIdx]?.label !== 'Warm-up') {
+        logActualWeight(exName, wt, repsRaw);
+      }
+    }
+
+    startRestTimer(exIdx, ex.rest);
+    updateSessionProgress();
+  }
+}
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
