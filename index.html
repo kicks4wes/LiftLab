@@ -1887,7 +1887,7 @@ select.field-input { appearance: none; }
 <!-- ACTIVE WORKOUT SESSION -->
 <div id="workout-session">
   <div class="session-header">
-    <button class="back-btn" onclick="closeSessionWithConfirm()">←</button>
+    <button class="back-btn" id="sessionBackBtn">←</button>
     <div class="session-title">
       <h2 id="sessionName">Workout</h2>
       <p id="sessionMeta">0 exercises</p>
@@ -1896,6 +1896,9 @@ select.field-input { appearance: none; }
   </div>
   <div class="session-progress"><div class="session-progress-fill" id="sessionProgressFill"></div></div>
   <div class="session-body" id="sessionBody"></div>
+  <div style="padding:0 20px 40px">
+    <button class="finish-session-btn" id="finishSessionBtn">FINISH WORKOUT 🏆</button>
+  </div>
 </div>
 
 <!-- CUSTOM CONFIRM -->
@@ -2937,9 +2940,7 @@ function startSession(workoutIndex) {
         <button class="rest-skip-btn" onclick="skipRest(${i})">SKIP</button>
       </div>
     </div>
-  `}).join('') + `
-    <button class="finish-session-btn" onclick="finishSession()">FINISH WORKOUT 🏆</button>
-  `;
+  `}).join('');
 
   sessionStart = Date.now();
   sessionInterval = setInterval(updateSessionTimer, 1000);
@@ -3509,19 +3510,31 @@ function checkSet(exIdx, setIdx) {
     updateSessionProgress();
   }
 }
+// Wire session buttons with addEventListener (more reliable on iPhone than onclick)
+document.getElementById('sessionBackBtn').addEventListener('click', () => closeSessionWithConfirm());
+document.getElementById('finishSessionBtn').addEventListener('click', () => finishSession());
+
+// Also wire confirm buttons
+document.getElementById('confirmAction').addEventListener('click', function() {
+  dismissConfirm();
+  if (window._confirmCallback) window._confirmCallback();
+});
+
 function showConfirm(title, msg, onConfirm) {
   document.getElementById('confirmTitle').textContent = title;
   document.getElementById('confirmMsg').textContent = msg;
-  document.getElementById('confirmAction').onclick = () => {
-    dismissConfirm();
-    onConfirm();
-  };
+  window._confirmCallback = onConfirm;
   document.getElementById('customConfirm').classList.add('show');
 }
 
 function dismissConfirm() {
   document.getElementById('customConfirm').classList.remove('show');
+  window._confirmCallback = null;
 }
+
+document.getElementById('customConfirm').addEventListener('click', function(e) {
+  if (e.target === this) dismissConfirm();
+});
 
 function closeSession() {
   clearInterval(sessionInterval);
