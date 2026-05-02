@@ -2130,11 +2130,9 @@ window.showOnboarding = function() { showScreen('onboarding'); if(typeof buildSt
 // INIT
 // ═══════════════════════════════════════
 function init() {
-  // authLoading is already visible by default
-  // Firebase onAuthStateChanged will fire and handle routing
-  // Handle case where Firebase already fired before main script loaded
-  if (window._showAppPending) { showAppMain(); window._showAppPending = false; }
-  else if (window._showOnboardingPending) { showOnboardingMain(); window._showOnboardingPending = false; }
+  wireButtons();
+  if (window._showAppPending) { showApp(); window._showAppPending = false; }
+  else if (window._showOnboardingPending) { showOnboarding(); window._showOnboardingPending = false; }
 }
 
 function save() {
@@ -2907,6 +2905,9 @@ function startSession(workoutIndex) {
   sessionStart = Date.now();
   sessionInterval = setInterval(updateSessionTimer, 1000);
   updateSessionProgress();
+  // Reset finish button
+  const finishBtn = document.getElementById('finishSessionBtn');
+  if (finishBtn) { finishBtn.style.opacity = '1'; finishBtn.textContent = 'FINISH WORKOUT 🏆'; }
   session.classList.add('open');
   session.scrollTop = 0;
 }
@@ -3472,30 +3473,74 @@ function checkSet(exIdx, setIdx) {
     updateSessionProgress();
   }
 }
-// Wire session buttons with addEventListener (more reliable on iPhone than onclick)
-document.addEventListener('DOMContentLoaded', function() {
+// ═══════════════════════════════════════
+// BUTTON WIRING — runs after DOM ready
+// ═══════════════════════════════════════
+function wireButtons() {
+  // Session back button
   const backBtn = document.getElementById('sessionBackBtn');
+  if (backBtn) {
+    backBtn.onclick = null;
+    backBtn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      closeSessionWithConfirm();
+    });
+    backBtn.addEventListener('click', function() {
+      closeSessionWithConfirm();
+    });
+  }
+
+  // Finish workout button
   const finishBtn = document.getElementById('finishSessionBtn');
-  const cancelBtn = document.querySelector('.ccb-cancel');
+  if (finishBtn) {
+    finishBtn.onclick = null;
+    finishBtn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      this.style.opacity = '0.6';
+      this.textContent = 'SAVING... 💾';
+      setTimeout(() => finishSession(), 300);
+    });
+    finishBtn.addEventListener('click', function() {
+      this.style.opacity = '0.6';
+      this.textContent = 'SAVING... 💾';
+      setTimeout(() => finishSession(), 300);
+    });
+  }
+
+  // Confirm dialog EXIT button
   const confirmBtn = document.getElementById('confirmAction');
+  if (confirmBtn) {
+    confirmBtn.onclick = null;
+    confirmBtn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      dismissConfirm();
+      if (window._confirmCallback) { window._confirmCallback(); window._confirmCallback = null; }
+    });
+    confirmBtn.addEventListener('click', function() {
+      dismissConfirm();
+      if (window._confirmCallback) { window._confirmCallback(); window._confirmCallback = null; }
+    });
+  }
 
-  if (backBtn) backBtn.addEventListener('click', () => closeSessionWithConfirm());
-  if (finishBtn) finishBtn.addEventListener('click', () => finishSession());
-  if (cancelBtn) cancelBtn.addEventListener('click', () => dismissConfirm());
-  if (confirmBtn) confirmBtn.addEventListener('click', () => {
-    dismissConfirm();
-    if (window._confirmCallback) {
-      window._confirmCallback();
-      window._confirmCallback = null;
-    }
-  });
+  // Confirm dialog STAY button
+  const cancelBtn = document.querySelector('.ccb-cancel');
+  if (cancelBtn) {
+    cancelBtn.onclick = null;
+    cancelBtn.addEventListener('touchend', function(e) { e.preventDefault(); dismissConfirm(); });
+    cancelBtn.addEventListener('click', function() { dismissConfirm(); });
+  }
 
-  // Tap outside confirm box to dismiss
-  const confirmOverlay = document.getElementById('customConfirm');
-  if (confirmOverlay) confirmOverlay.addEventListener('click', function(e) {
-    if (e.target === this) dismissConfirm();
-  });
-});
+  // Tap outside confirm to dismiss
+  const overlay = document.getElementById('customConfirm');
+  if (overlay) {
+    overlay.addEventListener('touchend', function(e) {
+      if (e.target === this) { e.preventDefault(); dismissConfirm(); }
+    });
+    overlay.addEventListener('click', function(e) {
+      if (e.target === this) dismissConfirm();
+    });
+  }
+}
 
 function closeSession() {
   clearInterval(sessionInterval);
