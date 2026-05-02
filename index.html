@@ -1017,14 +1017,24 @@ select.field-input { appearance: none; }
   border: 1px solid var(--border2);
   border-radius: 10px;
   padding: 14px;
+  overflow: hidden;
 }
-.pr-card-ex { font-size: 11px; color: var(--text2); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-card-ex {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
 .pr-card-val {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 800;
   color: var(--accent);
   line-height: 1;
+  white-space: nowrap;
 }
 .pr-card-unit { font-size: 12px; color: var(--text3); }
 
@@ -1832,7 +1842,7 @@ select.field-input { appearance: none; }
 <!-- ACTIVE WORKOUT SESSION -->
 <div id="workout-session">
   <div class="session-header">
-    <button class="back-btn" onclick="closeSession()">←</button>
+    <button class="back-btn" onclick="closeSessionWithConfirm()">←</button>
     <div class="session-title">
       <h2 id="sessionName">Workout</h2>
       <p id="sessionMeta">0 exercises</p>
@@ -2985,12 +2995,14 @@ function renderChartsTab() {
   ).join('');
 
   // PR grid
-  prGrid.innerHTML = exercises.slice(0, 6).map(ex => `
+  prGrid.innerHTML = exercises.slice(0, 6).map(ex => {
+    const shortName = ex.length > 20 ? ex.split(' ').slice(0, 3).join(' ') : ex;
+    return `
     <div class="pr-card">
-      <div class="pr-card-ex">${ex}</div>
+      <div class="pr-card-ex" title="${ex}">${shortName}</div>
       <div class="pr-card-val">${state.prs[ex]}<span class="pr-card-unit"> lbs</span></div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   if (!activeChartEx && exercises.length) selectChartEx(exercises[0]);
   else if (activeChartEx) renderChart(activeChartEx);
@@ -3440,6 +3452,19 @@ function checkSet(exIdx, setIdx) {
     updateSessionProgress();
   }
 }
+function closeSession() {
+  clearInterval(sessionInterval);
+  Object.values(restTimers).forEach(t => clearInterval(t));
+  restTimers = {};
+  document.getElementById('workout-session').classList.remove('open');
+}
+
+function closeSessionWithConfirm() {
+  if (confirm('Exit workout? Your progress won\'t be saved.')) {
+    closeSession();
+  }
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
