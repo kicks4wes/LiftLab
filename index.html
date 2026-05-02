@@ -3562,7 +3562,8 @@ function closeSession() {
 }
 
 function closeSessionWithConfirm() {
-  showConfirm('EXIT WORKOUT?', "Your progress won't be saved.", closeSession);
+  closeSession();
+  showToast('Workout exited');
 }
 
 function resetApp() {
