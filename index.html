@@ -1938,8 +1938,8 @@ function showScreen(id) {
   const el = document.getElementById(id);
   if (el) el.classList.add('active');
 }
-function showApp() { window._showAppPending = true; }
-function showOnboarding() { window._showOnboardingPending = true; }
+window.showApp = function() { showScreen('app'); if(typeof refreshUI === 'function') refreshUI(); else window._showAppPending = true; };
+window.showOnboarding = function() { showScreen('onboarding'); if(typeof buildStepDots === 'function') { buildStepDots(); goToStep(0); } else window._showOnboardingPending = true; };
 
 // Fallback — if Firebase doesn't fire within 5 seconds, show splash
 window._fbTimeout = setTimeout(() => {
@@ -2120,19 +2120,11 @@ let sessionInterval = null;
 let sessionStart = null;
 let currentSessionWorkout = null;
 
-// Real showApp and showOnboarding — replace stubs
-function showAppMain() {
-  showScreen('app');
-  refreshUI();
-}
-function showOnboardingMain() {
-  showScreen('onboarding');
-  buildStepDots();
-  goToStep(0);
-}
-// Override stubs now that real functions exist
-window.showApp = showAppMain;
-window.showOnboarding = showOnboardingMain;
+// Real showApp and showOnboarding are defined later — these resolve pending flags
+function showAppMain() { showApp(); }
+function showOnboardingMain() { showOnboarding(); }
+window.showApp = function() { showScreen('app'); if(typeof refreshUI === 'function') refreshUI(); else window._showAppPending = true; };
+window.showOnboarding = function() { showScreen('onboarding'); if(typeof buildStepDots === 'function') { buildStepDots(); goToStep(0); } else window._showOnboardingPending = true; };
 
 // ═══════════════════════════════════════
 // INIT
@@ -2182,36 +2174,6 @@ function toggleAuthMode() {
 // ═══════════════════════════════════════
 // SCREENS
 // ═══════════════════════════════════════
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-function showOnboarding() {
-  showScreen('onboarding');
-  buildStepDots();
-  goToStep(0);
-}
-
-function loadExistingUser() {
-  try {
-    const saved = localStorage.getItem('liftlab-state');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      state = Object.assign({ user: null, workouts: [], history: [], prs: {}, actualWeights: {} }, parsed);
-      if (!state.workouts) state.workouts = [];
-      if (!state.history) state.history = [];
-      if (!state.prs) state.prs = {};
-      if (!state.actualWeights) state.actualWeights = {};
-      if (state.user) { showApp(); return; }
-    }
-  } catch (e) {
-    console.warn('Load failed:', e);
-  }
-  showToast('No account found — let\'s set you up!');
-  showOnboarding();
-}
-
 // ═══════════════════════════════════════
 // ONBOARDING
 // ═══════════════════════════════════════
@@ -2321,8 +2283,8 @@ function showApp() {
   refreshUI();
 }
 
-function refreshUI() {  const u = state.user;
-  if (!u) return;
+function refreshUI() {
+  const u = state.user;  if (!u) return;
   const initials = u.name ? u.name[0].toUpperCase() : 'A';
 
   document.getElementById('heroName').textContent = u.name || 'Athlete';
@@ -3561,11 +3523,6 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-function loadExistingUser() {
-  // Firebase handles this via onAuthStateChanged
-  showToast('Signing you in...');
 }
 
 // Service Worker
