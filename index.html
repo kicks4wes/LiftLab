@@ -2073,39 +2073,68 @@ function saveWorkout(workout) {
 
 // ═══════════════════════════════════════
 // EXERCISE ALTERNATIVES LIBRARY
+// Every exercise has at least 2-3 options — no one gets siloed
 // ═══════════════════════════════════════
 const ALTERNATIVES = {
-  'Barbell Bent-Over Row':       [{ name: 'Seated Cable Row', note: 'Cable — same muscles, easier on lower back' }, { name: 'DB Chest-Supported Row', note: 'Incline bench — removes lower back entirely' }, { name: 'Single-Arm DB Row', note: 'Unilateral — great if barbell unavailable' }],
-  'Lat Pulldown':                [{ name: 'Pull-Up', note: 'Bodyweight — harder but superior' }, { name: 'Straight-Arm Pulldown', note: 'Cable — pure lat isolation' }, { name: 'Resistance Band Pulldown', note: 'Band — home gym friendly' }],
-  'Pull-Up':                     [{ name: 'Lat Pulldown', note: 'Cable machine — same pattern, adjustable weight' }, { name: 'Inverted Row', note: 'Bodyweight — easier regression' }, { name: 'Resistance Band Pulldown', note: 'Band — no pull-up bar needed' }],
-  'Single-Arm DB Row':           [{ name: 'Barbell Bent-Over Row', note: 'Bilateral — more weight, more lat activation' }, { name: 'Seated Cable Row', note: 'Cable — constant tension throughout' }, { name: 'TRX Row', note: 'Bodyweight — adjustable difficulty' }],
-  'Seated Cable Row':            [{ name: 'DB Chest-Supported Row', note: 'Free weight — eliminates momentum' }, { name: 'Barbell Bent-Over Row', note: 'Compound — heavier loads possible' }, { name: 'Machine Row', note: 'Machine — good for beginners' }],
-  'Straight-Arm Pulldown':       [{ name: 'DB Pullover', note: 'Free weight — great stretch at top' }, { name: 'Cable Pullover', note: 'Cable — constant tension version' }],
-  'EZ-Bar Curl':                 [{ name: 'Dumbbell Curl', note: 'DB — allows neutral wrist position' }, { name: 'Cable Curl', note: 'Cable — constant tension through full ROM' }, { name: 'Resistance Band Curl', note: 'Band — home gym friendly' }],
-  'Incline DB Curl':             [{ name: 'Cable Curl (low pulley)', note: 'Cable — same stretch emphasis' }, { name: 'Spider Curl', note: 'Preacher — similar long head focus' }],
-  'Barbell Bench Press':         [{ name: 'DB Bench Press', note: 'Dumbbells — better range of motion' }, { name: 'Machine Chest Press', note: 'Machine — no spotter needed' }, { name: 'Push-Up', note: 'Bodyweight — anywhere, anytime' }],
-  'Incline DB Press':            [{ name: 'Incline Barbell Press', note: 'Barbell — heavier loads' }, { name: 'Incline Cable Fly', note: 'Cable — constant tension' }, { name: 'Incline Push-Up', note: 'Bodyweight — no equipment needed' }],
-  'Cable Fly / Pec Dec':         [{ name: 'DB Fly', note: 'Free weight — great stretch' }, { name: 'Resistance Band Fly', note: 'Band — home gym option' }],
-  'Tricep Pushdown':             [{ name: 'Tricep Dip', note: 'Bodyweight — bench or parallel bars' }, { name: 'Close-Grip Push-Up', note: 'Bodyweight — hands close together' }, { name: 'DB Kickback', note: 'Dumbbell — no cable needed' }],
-  'Overhead Tricep Extension':   [{ name: 'Skull Crusher', note: 'Barbell — lying version, same muscles' }, { name: 'DB Overhead Extension', note: 'Dumbbell — single or both hands' }],
-  'Close-Grip Bench Press':      [{ name: 'Tricep Pushdown', note: 'Cable — isolation, easier on wrists' }, { name: 'Diamond Push-Up', note: 'Bodyweight — no equipment needed' }],
-  'Chest Dips':                  [{ name: 'Decline Push-Up', note: 'Bodyweight — no dip bar needed' }, { name: 'Decline Bench Press', note: 'Barbell — lower chest focus' }],
-  'Barbell Back Squat':          [{ name: 'Goblet Squat', note: 'DB — great for beginners and home gym' }, { name: 'Leg Press', note: 'Machine — no balance required' }, { name: 'Bulgarian Split Squat', note: 'Unilateral — harder, great for imbalances' }],
-  'Romanian Deadlift':           [{ name: 'DB Romanian Deadlift', note: 'Dumbbells — easier to set up' }, { name: 'Leg Curl', note: 'Machine — pure hamstring isolation' }, { name: 'Good Morning', note: 'Barbell — similar hip hinge pattern' }],
-  'Leg Press':                   [{ name: 'Barbell Back Squat', note: 'Compound — more total muscle activation' }, { name: 'Goblet Squat', note: 'DB — great squat alternative' }, { name: 'Bulgarian Split Squat', note: 'Unilateral — targets glutes more' }],
-  'Leg Curl':                    [{ name: 'Romanian Deadlift', note: 'Hip hinge — more functional hamstring work' }, { name: 'Nordic Hamstring Curl', note: 'Bodyweight — extremely effective' }, { name: 'Swiss Ball Leg Curl', note: 'Ball — home gym option' }],
-  'Leg Extension':               [{ name: 'Wall Sit', note: 'Bodyweight — isometric quad burn' }, { name: 'Step-Up', note: 'Functional — unilateral quad work' }],
-  'Walking Lunges':              [{ name: 'Reverse Lunge', note: 'Easier on knees — same muscles' }, { name: 'Step-Up', note: 'Box — great unilateral work' }, { name: 'Bulgarian Split Squat', note: 'Harder — more glute emphasis' }],
-  'Overhead Press (Barbell or DB)': [{ name: 'DB Shoulder Press', note: 'Dumbbells — better range of motion' }, { name: 'Arnold Press', note: 'DB — hits all three delt heads' }, { name: 'Pike Push-Up', note: 'Bodyweight — no equipment needed' }],
-  'DB Lateral Raise':            [{ name: 'Cable Lateral Raise', note: 'Cable — constant tension at bottom' }, { name: 'Resistance Band Lateral Raise', note: 'Band — home gym friendly' }],
-  'Hammer Curl':                 [{ name: 'Rope Hammer Curl', note: 'Cable — constant tension' }, { name: 'Cross-Body Curl', note: 'DB — hits brachioradialis more' }],
-  'Face Pull':                   [{ name: 'Band Pull-Apart', note: 'Band — same rear delt work, anywhere' }, { name: 'Reverse Fly', note: 'DB — rear delt isolation' }],
-  'Barbell Squat':               [{ name: 'Goblet Squat', note: 'DB — great for home gym' }, { name: 'Leg Press', note: 'Machine — no rack needed' }],
-  'Bench Press':                 [{ name: 'DB Bench Press', note: 'Dumbbells — better range of motion' }, { name: 'Push-Up', note: 'Bodyweight — no equipment' }],
-  'Barbell Row':                 [{ name: 'Seated Cable Row', note: 'Cable — great if no barbell' }, { name: 'DB Row', note: 'Dumbbells — unilateral option' }],
-  'Overhead Press':              [{ name: 'DB Shoulder Press', note: 'Dumbbells — natural wrist rotation' }, { name: 'Pike Push-Up', note: 'Bodyweight — no equipment' }],
-  'Pull-Up / Lat Pulldown':      [{ name: 'Resistance Band Pulldown', note: 'Band — home gym alternative' }, { name: 'Inverted Row', note: 'Bodyweight — table or bar needed' }],
+
+  // ── BACK ──
+  'Barbell Bent-Over Row':       [{ name: 'Seated Cable Row', note: 'Cable — same muscles, easier on lower back' }, { name: 'DB Chest-Supported Row', note: 'Incline bench — removes lower back stress entirely' }, { name: 'Single-Arm DB Row', note: 'Unilateral — great if no barbell available' }],
+  'Barbell Row':                 [{ name: 'Seated Cable Row', note: 'Cable — great if no barbell' }, { name: 'Single-Arm DB Row', note: 'Dumbbells — unilateral option' }, { name: 'TRX Row', note: 'Bodyweight — adjustable difficulty' }],
+  'Lat Pulldown':                [{ name: 'Pull-Up', note: 'Bodyweight — harder but superior movement' }, { name: 'Resistance Band Pulldown', note: 'Band — home gym friendly, same pattern' }, { name: 'Straight-Arm Pulldown', note: 'Cable — pure lat isolation, no bicep' }],
+  'Pull-Up':                     [{ name: 'Lat Pulldown', note: 'Cable machine — same pattern, adjustable weight' }, { name: 'Inverted Row', note: 'Bodyweight — easier regression, use a table or bar' }, { name: 'Resistance Band Pulldown', note: 'Band — no pull-up bar needed' }],
+  'Pull-Up / Lat Pulldown':      [{ name: 'Resistance Band Pulldown', note: 'Band — home gym alternative' }, { name: 'Inverted Row', note: 'Bodyweight — table or bar needed' }, { name: 'Single-Arm DB Row', note: 'DB — great if no cable or bar' }],
+  'Single-Arm DB Row':           [{ name: 'Barbell Bent-Over Row', note: 'Bilateral — more weight, more lat activation' }, { name: 'Seated Cable Row', note: 'Cable — constant tension throughout' }, { name: 'TRX Row', note: 'Bodyweight — adjustable by angle' }],
+  'Seated Cable Row':            [{ name: 'DB Chest-Supported Row', note: 'Free weight — eliminates momentum' }, { name: 'Barbell Bent-Over Row', note: 'Compound — heavier loads possible' }, { name: 'Machine Row', note: 'Machine — great for beginners' }],
+  'Straight-Arm Pulldown':       [{ name: 'DB Pullover', note: 'Free weight — great stretch at top' }, { name: 'Cable Pullover', note: 'Cable — constant tension version' }, { name: 'Band Pullover', note: 'Band — home gym option' }],
+
+  // ── BICEPS ──
+  'EZ-Bar Curl':                 [{ name: 'Dumbbell Curl', note: 'DB — allows natural wrist rotation' }, { name: 'Cable Curl', note: 'Cable — constant tension through full ROM' }, { name: 'Resistance Band Curl', note: 'Band — home gym friendly' }],
+  'Incline DB Curl':             [{ name: 'Cable Curl (low pulley)', note: 'Cable — same long-head stretch emphasis' }, { name: 'Spider Curl', note: 'Preacher bench — similar peak contraction' }, { name: 'Concentration Curl', note: 'DB — total isolation, no cheating possible' }],
+  'Hammer Curl':                 [{ name: 'Rope Hammer Curl', note: 'Cable — constant tension version' }, { name: 'Cross-Body Curl', note: 'DB — hits brachioradialis more' }, { name: 'Reverse Curl', note: 'Barbell or DB — forearm strength bonus' }],
+  'Cable Curl':                  [{ name: 'EZ-Bar Curl', note: 'Barbell — heavier loads possible' }, { name: 'Dumbbell Curl', note: 'DB — great for unilateral work' }, { name: 'Resistance Band Curl', note: 'Band — no cable needed' }],
+
+  // ── CHEST ──
+  'Barbell Bench Press':         [{ name: 'DB Bench Press', note: 'Dumbbells — better range of motion, no spotter needed' }, { name: 'Machine Chest Press', note: 'Machine — safest option, great for beginners' }, { name: 'Push-Up', note: 'Bodyweight — anywhere, anytime, zero equipment' }],
+  'Bench Press':                 [{ name: 'DB Bench Press', note: 'Dumbbells — better range of motion' }, { name: 'Push-Up', note: 'Bodyweight — no equipment needed' }, { name: 'Machine Chest Press', note: 'Machine — no spotter required' }],
+  'Incline DB Press':            [{ name: 'Incline Barbell Press', note: 'Barbell — heavier loads, same upper chest focus' }, { name: 'Incline Cable Fly', note: 'Cable — constant tension throughout' }, { name: 'Incline Push-Up', note: 'Bodyweight — feet elevated, no equipment' }],
+  'Cable Fly / Pec Dec':         [{ name: 'DB Fly', note: 'Free weight — great deep stretch' }, { name: 'Resistance Band Fly', note: 'Band — home gym option, same movement' }, { name: 'Push-Up Plus', note: 'Bodyweight — protraction at top hits inner chest' }],
+  'Chest Dips':                  [{ name: 'Decline Push-Up', note: 'Bodyweight — feet elevated, no dip bar needed' }, { name: 'Decline Bench Press', note: 'Barbell — lower chest focus with more weight' }, { name: 'Machine Dip', note: 'Machine — assisted version if dips too hard' }],
+
+  // ── TRICEPS ──
+  'Tricep Pushdown':             [{ name: 'Tricep Dip', note: 'Bodyweight — bench or parallel bars, zero equipment' }, { name: 'Close-Grip Push-Up', note: 'Bodyweight — hands close together, great finisher' }, { name: 'DB Kickback', note: 'Dumbbell — no cable needed, good isolation' }],
+  'Overhead Tricep Extension':   [{ name: 'Skull Crusher', note: 'Barbell — lying version, heavier loads' }, { name: 'DB Overhead Extension', note: 'Dumbbell — single or both hands' }, { name: 'Band Overhead Extension', note: 'Band — home gym, same long-head stretch' }],
+  'Close-Grip Bench Press':      [{ name: 'Tricep Pushdown', note: 'Cable — isolation, easier on wrists' }, { name: 'Diamond Push-Up', note: 'Bodyweight — no equipment needed' }, { name: 'DB French Press', note: 'Dumbbell — lying overhead extension' }],
+
+  // ── LEGS ──
+  'Barbell Back Squat':          [{ name: 'Goblet Squat', note: 'DB or KB — great for home gym and beginners' }, { name: 'Leg Press', note: 'Machine — no balance required, load quads hard' }, { name: 'Bulgarian Split Squat', note: 'Unilateral — harder, exposes imbalances' }],
+  'Barbell Squat':               [{ name: 'Goblet Squat', note: 'DB — perfect for home gym' }, { name: 'Leg Press', note: 'Machine — no rack needed' }, { name: 'Air Squat', note: 'Bodyweight — no equipment, high reps for burn' }],
+  'Romanian Deadlift':           [{ name: 'DB Romanian Deadlift', note: 'Dumbbells — easier to set up, same hamstring focus' }, { name: 'Leg Curl', note: 'Machine — pure hamstring isolation' }, { name: 'Good Morning', note: 'Barbell — similar hip hinge, more lower back' }],
+  'Leg Press':                   [{ name: 'Barbell Back Squat', note: 'Compound — more total muscle and hormonal response' }, { name: 'Goblet Squat', note: 'DB — great squat alternative anywhere' }, { name: 'Bulgarian Split Squat', note: 'Unilateral — targets glutes and quads hard' }],
+  'Leg Curl':                    [{ name: 'Romanian Deadlift', note: 'Hip hinge — more functional hamstring work' }, { name: 'Nordic Hamstring Curl', note: 'Bodyweight — brutally effective, no equipment' }, { name: 'Swiss Ball Leg Curl', note: 'Stability ball — home gym option' }],
+  'Leg Extension':               [{ name: 'Wall Sit', note: 'Bodyweight — isometric quad burn, no equipment' }, { name: 'Step-Up', note: 'Functional — unilateral quad work with DB' }, { name: 'Sissy Squat', note: 'Bodyweight — advanced quad isolation' }],
+  'Walking Lunges':              [{ name: 'Reverse Lunge', note: 'Easier on knees — same muscles, less impact' }, { name: 'Step-Up', note: 'Box or bench — great unilateral work' }, { name: 'Bulgarian Split Squat', note: 'Harder — more glute and balance emphasis' }],
+  'Standing Calf Raise':         [{ name: 'Seated Calf Raise', note: 'Machine — targets soleus more' }, { name: 'Single-Leg Calf Raise', note: 'Bodyweight — harder, no equipment needed' }, { name: 'Jump Rope', note: 'Cardio — great calf builder and conditioning' }],
+
+  // ── SHOULDERS ──
+  'Overhead Press (Barbell or DB)': [{ name: 'DB Shoulder Press', note: 'Dumbbells — better range of motion, natural wrist rotation' }, { name: 'Arnold Press', note: 'DB — hits all three delt heads through rotation' }, { name: 'Pike Push-Up', note: 'Bodyweight — no equipment, great shoulder builder' }],
+  'Overhead Press':              [{ name: 'DB Shoulder Press', note: 'Dumbbells — natural wrist rotation' }, { name: 'Pike Push-Up', note: 'Bodyweight — no equipment needed' }, { name: 'Arnold Press', note: 'DB — hits front, side, and rear delts' }],
+  'DB Lateral Raise':            [{ name: 'Cable Lateral Raise', note: 'Cable — constant tension at the bottom of movement' }, { name: 'Resistance Band Lateral Raise', note: 'Band — home gym friendly, same movement' }, { name: 'Leaning Cable Lateral Raise', note: 'Cable — greater stretch at bottom' }],
+  'Face Pull':                   [{ name: 'Band Pull-Apart', note: 'Band — same rear delt work, do anywhere' }, { name: 'Reverse Fly', note: 'DB — rear delt isolation on incline bench' }, { name: 'TRX Reverse Fly', note: 'Bodyweight — adjustable difficulty by angle' }],
+
+  // ── CORE ──
+  'Plank':                       [{ name: 'Dead Bug', note: 'Bodyweight — more dynamic, trains anti-rotation' }, { name: 'Ab Wheel Rollout', note: 'Ab wheel — harder version of plank' }, { name: 'Bear Crawl Hold', note: 'Bodyweight — knees hover 2" off ground, brutal' }],
+  'Dead Bug':                    [{ name: 'Plank', note: 'Bodyweight — simpler, great for beginners' }, { name: 'Bird Dog', note: 'Bodyweight — similar anti-rotation pattern' }, { name: 'Hollow Body Hold', note: 'Bodyweight — gymnastics core, very effective' }],
+  'Ab Wheel Rollout':            [{ name: 'TRX Pike', note: 'Suspension — similar core demand' }, { name: 'Plank to Pike', note: 'Bodyweight — on sliders or socks on floor' }, { name: 'Stability Ball Rollout', note: 'Ball — easier regression of the same movement' }],
+  'Hanging Leg Raise':           [{ name: 'Lying Leg Raise', note: 'Bodyweight — no bar needed, same lower ab focus' }, { name: 'Reverse Crunch', note: 'Bodyweight — easier version, great for beginners' }, { name: 'Dragon Flag', note: 'Bodyweight — advanced version, bench needed' }],
+  'Russian Twist':               [{ name: 'Pallof Press', note: 'Cable or band — anti-rotation, great for core stability' }, { name: 'Woodchop', note: 'Cable — rotational power from high to low' }, { name: 'Bicycle Crunch', note: 'Bodyweight — hits obliques well, no equipment' }],
+  'Burpee':                      [{ name: 'Mountain Climbers', note: 'Bodyweight — less impact, same conditioning effect' }, { name: 'Jump Squat', note: 'Bodyweight — lower body power and cardio' }, { name: 'Bear Crawl', note: 'Bodyweight — full body, easier on joints than burpees' }],
+  'Mountain Climbers':           [{ name: 'Burpee', note: 'Bodyweight — harder, more total body' }, { name: 'High Knees', note: 'Bodyweight — standing version, easier on wrists' }, { name: 'Plank Shoulder Taps', note: 'Bodyweight — slower, more core stability focus' }],
+
+  // ── FULL BODY COMPOUNDS ──
+  'Barbell Deadlift':            [{ name: 'Trap Bar Deadlift', note: 'Trap bar — more quad friendly, easier to learn' }, { name: 'DB Deadlift', note: 'Dumbbells — home gym option, same pattern' }, { name: 'Romanian Deadlift', note: 'Barbell — more hamstring focus, easier on back' }],
+  'Power Clean':                 [{ name: 'DB Hang Clean', note: 'Dumbbells — same power development, easier to learn' }, { name: 'Kettlebell Swing', note: 'KB — hip hinge power, great conditioning' }, { name: 'Jump Squat', note: 'Bodyweight — explosive lower body, no equipment' }],
 };
+
 
 // ═══════════════════════════════════════
 // PROGRESSIVE OVERLOAD ENGINE
@@ -2370,4 +2399,3 @@ init();
 </script>
 </body>
 </html>
-
