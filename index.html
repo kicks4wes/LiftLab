@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1886,38 +1887,32 @@ window._fbTimeout = setTimeout(() => {
   }
 }, 5000);
 </script>
-<!-- Firebase -->
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, orderBy, limit, getDocs, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-
+<!-- Firebase compat CDN — works on GitHub Pages without module restrictions -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
 const firebaseConfig = {
   apiKey: "AIzaSyCrKbjExqlj6wuIySuieBosrEvz--2mZuM",
   authDomain: "liftlab-c628c.firebaseapp.com",
   projectId: "liftlab-c628c",
   storageBucket: "liftlab-c628c.firebasestorage.app",
   messagingSenderId: "947271811288",
-  appId: "1:947271811288:web:b177f598db8913072897ad",
-  measurementId: "G-68DXK120DJ"
+  appId: "1:947271811288:web:b177f598db8913072897ad"
 };
 
-const fbApp = initializeApp(firebaseConfig);
-const auth = getAuth(fbApp);
-const db = getFirestore(fbApp);
+firebase.initializeApp(firebaseConfig);
+const fbAuth = firebase.auth();
+const fbDb = firebase.firestore();
 
-// Expose to global scope so non-module functions can call them
-window._fb = { auth, db, doc, setDoc, getDoc, collection, addDoc, query, orderBy, limit, getDocs, onSnapshot, serverTimestamp, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
-
-// Auth state listener — deferred so main script functions are available
-onAuthStateChanged(auth, async (user) => {
-  clearTimeout(window._fbTimeout); // Firebase responded — cancel fallback
+// Auth state listener
+fbAuth.onAuthStateChanged(async (user) => {
+  clearTimeout(window._fbTimeout);
   document.getElementById('authLoading').style.display = 'none';
   if (user) {
     window._fbUser = user;
     await loadFromFirestore(user.uid);
     startPitListener();
-    // Call main script functions — they're guaranteed loaded since module scripts run after regular scripts
     if (state.user) {
       if (typeof showAppMain === 'function') showAppMain();
       else window._showAppPending = true;
@@ -1933,14 +1928,12 @@ onAuthStateChanged(auth, async (user) => {
 
 async function loadFromFirestore(uid) {
   try {
-    const snap = await getDoc(doc(db, 'users', uid));
-    if (snap.exists()) {
-      const data = snap.data();
-      state = Object.assign({ user: null, workouts: [], history: [], prs: {}, actualWeights: {} }, data);
+    const snap = await fbDb.collection('users').doc(uid).get();
+    if (snap.exists) {
+      state = Object.assign({ user: null, workouts: [], history: [], prs: {}, actualWeights: {} }, snap.data());
     }
-  } catch (e) {
-    console.warn('Firestore load failed, using local:', e);
-    // Fall back to localStorage
+  } catch(e) {
+    console.warn('Firestore load failed:', e);
     try {
       const saved = localStorage.getItem('liftlab-state');
       if (saved) state = JSON.parse(saved);
@@ -1949,63 +1942,95 @@ async function loadFromFirestore(uid) {
 }
 
 window._saveToFirestore = async function() {
-  const user = window._fbUser;
-  if (!user) return;
+  if (!window._fbUser) return;
   try {
-    await setDoc(doc(db, 'users', user.uid), state);
-  } catch (e) {
-    console.warn('Firestore save failed:', e);
-  }
+    await fbDb.collection('users').doc(window._fbUser.uid).set(state);
+  } catch(e) { console.warn('Firestore save failed:', e); }
 };
 
-// Post to shared Pit feed in Firestore
 window._postToPitFirestore = async function(item) {
   try {
-    await addDoc(collection(db, 'pit_feed'), {
-      ...item,
-      timestamp: serverTimestamp()
-    });
-  } catch (e) {
-    console.warn('Pit post failed:', e);
-  }
+    await fbDb.collection('pit_feed').add({ ...item, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+  } catch(e) { console.warn('Pit post failed:', e); }
 };
 
-// Real-time Pit listener
 window._pitUnsub = null;
 function startPitListener() {
   if (window._pitUnsub) window._pitUnsub();
   try {
-    const q = query(collection(db, 'pit_feed'), orderBy('timestamp', 'desc'), limit(30));
-    window._pitUnsub = onSnapshot(q, (snap) => {
-      window._livePitFeed = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Re-render pit if it's active tab
-      if (document.getElementById('tab-pit')?.classList.contains('active')) {
-        renderPit();
-      }
-    });
-  } catch (e) {
-    console.warn('Pit listener failed:', e);
-  }
+    window._pitUnsub = fbDb.collection('pit_feed')
+      .orderBy('timestamp', 'desc').limit(30)
+      .onSnapshot(snap => {
+        window._livePitFeed = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (document.getElementById('tab-pit')?.classList.contains('active')) renderPit();
+      });
+  } catch(e) { console.warn('Pit listener failed:', e); }
 }
 
-// Leaderboard in Firestore
 window._postLeaderboard = async function(name, initials, pts, workouts, prs) {
   const week = getWeekKey();
   try {
-    await setDoc(doc(db, 'leaderboard', week + '_' + name), {
-      name, initials, pts, workouts, prs, week,
-      timestamp: serverTimestamp()
-    }, { merge: true });
+    await fbDb.collection('leaderboard').doc(week + '_' + name).set(
+      { name, initials, pts, workouts, prs, week, timestamp: firebase.firestore.FieldValue.serverTimestamp() },
+      { merge: true }
+    );
   } catch(e) { console.warn('LB post failed:', e); }
 };
 
 window._getLeaderboard = async function() {
   const week = getWeekKey();
   try {
-    const q = query(collection(db, 'leaderboard'), orderBy('pts', 'desc'), limit(10));
-    const snap = await getDocs(q);
+    const snap = await fbDb.collection('leaderboard').orderBy('pts', 'desc').limit(10).get();
     return snap.docs.map(d => d.data()).filter(d => d.week === week);
   } catch(e) { return []; }
+};
+
+// Auth functions using compat SDK
+window.signInWithGoogle = async function() {
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await fbAuth.signInWithPopup(provider);
+  } catch(e) {
+    const el = document.getElementById('authError');
+    if (el) el.textContent = e.message;
+  }
+};
+
+window.signInWithEmail = async function() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Please enter email and password.'; return; }
+  try {
+    await fbAuth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    errEl.textContent = e.code === 'auth/user-not-found' ? 'No account found. Sign up instead?' :
+                        e.code === 'auth/wrong-password' ? 'Wrong password.' : e.message;
+  }
+};
+
+window.signUpWithEmail = async function() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Please enter email and password.'; return; }
+  if (pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+  try {
+    await fbAuth.createUserWithEmailAndPassword(email, pass);
+  } catch(e) {
+    errEl.textContent = e.code === 'auth/email-already-in-use' ? 'Account exists. Sign in instead.' : e.message;
+  }
+};
+
+window.signOutUser = async function() {
+  if (confirm('Sign out of LiftLab?')) {
+    if (window._pitUnsub) window._pitUnsub();
+    await fbAuth.signOut();
+    state = { user: null, workouts: [], history: [], prs: {}, actualWeights: {} };
+    localStorage.removeItem('liftlab-state');
+  }
 };
 </script>
 <script>
@@ -2060,9 +2085,9 @@ function save() {
 }
 
 // ═══════════════════════════════════════
-// AUTH FUNCTIONS
+// AUTH UI HELPERS
 // ═══════════════════════════════════════
-let authMode = 'signin'; // 'signin' or 'signup'
+let authMode = 'signin';
 
 function toggleAuthMode() {
   authMode = authMode === 'signin' ? 'signup' : 'signin';
@@ -2079,58 +2104,6 @@ function toggleAuthMode() {
     toggle.textContent = "Don't have an account? Sign up";
   }
   document.getElementById('authError').textContent = '';
-}
-
-async function signInWithGoogle() {
-  if (!window._fb) { showToast('Loading...'); return; }
-  try {
-    const provider = new window._fb.GoogleAuthProvider();
-    await window._fb.signInWithPopup(window._fb.auth, provider);
-    // onAuthStateChanged handles the rest
-  } catch (e) {
-    document.getElementById('authError').textContent = e.message;
-  }
-}
-
-async function signInWithEmail() {
-  if (!window._fb) { showToast('Loading...'); return; }
-  const email = document.getElementById('authEmail').value.trim();
-  const pass = document.getElementById('authPassword').value;
-  const errEl = document.getElementById('authError');
-  errEl.textContent = '';
-  if (!email || !pass) { errEl.textContent = 'Please enter email and password.'; return; }
-  try {
-    await window._fb.signInWithEmailAndPassword(window._fb.auth, email, pass);
-  } catch (e) {
-    errEl.textContent = e.code === 'auth/user-not-found' ? 'No account found. Sign up instead?' :
-                        e.code === 'auth/wrong-password' ? 'Wrong password.' : e.message;
-  }
-}
-
-async function signUpWithEmail() {
-  if (!window._fb) { showToast('Loading...'); return; }
-  const email = document.getElementById('authEmail').value.trim();
-  const pass = document.getElementById('authPassword').value;
-  const errEl = document.getElementById('authError');
-  errEl.textContent = '';
-  if (!email || !pass) { errEl.textContent = 'Please enter email and password.'; return; }
-  if (pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
-  try {
-    await window._fb.createUserWithEmailAndPassword(window._fb.auth, email, pass);
-    // onAuthStateChanged fires → new user → show onboarding
-  } catch (e) {
-    errEl.textContent = e.code === 'auth/email-already-in-use' ? 'Account already exists. Sign in instead.' : e.message;
-  }
-}
-
-async function signOutUser() {
-  if (!window._fb) return;
-  if (confirm('Sign out of LiftLab?')) {
-    if (window._pitUnsub) window._pitUnsub();
-    await window._fb.signOut(window._fb.auth);
-    state = { user: null, workouts: [], history: [], prs: {}, actualWeights: {} };
-    localStorage.removeItem('liftlab-state');
-  }
 }
 
 // ═══════════════════════════════════════
