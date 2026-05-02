@@ -1338,6 +1338,7 @@ select.field-input { appearance: none; }
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   z-index: 9999;
+  /* Visible by default — Firebase hides it once auth state is known */
 }
 .auth-loading-logo {
   font-family: 'Barlow Condensed', sans-serif;
@@ -1406,9 +1407,9 @@ select.field-input { appearance: none; }
 <body>
 
 <!-- AUTH LOADING -->
-<div class="auth-loading" id="authLoading">
-  <div class="auth-loading-logo">LIFT<span>LAB</span></div>
-  <div class="loading-spinner"></div>
+<div class="auth-loading" id="authLoading" style="display:flex;position:fixed;inset:0;background:#080808;align-items:center;justify-content:center;flex-direction:column;z-index:9999">
+  <div style="font-family:sans-serif;font-size:52px;font-weight:900;color:#f0f0f0;margin-bottom:24px">LIFT<span style="color:#c8f542">LAB</span></div>
+  <div style="width:48px;height:48px;border:3px solid #222;border-top-color:#c8f542;border-radius:50%;animation:spin 0.8s linear infinite"></div>
 </div>
 
 <!-- SPLASH -->
@@ -1675,20 +1676,6 @@ select.field-input { appearance: none; }
     </div>
   </div>
 
-  <!-- HISTORY TAB -->
-  <div class="tab-content" id="tab-history">
-    <div style="padding:20px 20px 0">
-      <div class="section-title" style="margin-bottom:16px">WORKOUT HISTORY</div>
-    </div>
-    <div id="historyList">
-      <div class="history-empty">
-        <div class="he-icon">📋</div>
-        <h3>NO HISTORY YET</h3>
-        <p>Complete your first workout and it'll show up here.</p>
-      </div>
-    </div>
-  </div>
-
   <!-- CHARTS TAB -->
   <div class="tab-content" id="tab-charts">
     <div style="padding:20px 20px 0;display:flex;justify-content:space-between;align-items:center">
@@ -1868,6 +1855,37 @@ select.field-input { appearance: none; }
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+
+<!-- Global state and stubs — must load BEFORE Firebase module -->
+<script>
+let state = { user: null, workouts: [], history: [], prs: {}, actualWeights: {} };
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+function showApp() { window._showAppPending = true; }
+function showOnboarding() { window._showOnboardingPending = true; }
+
+// Fallback — if Firebase doesn't fire within 5 seconds, show splash
+window._fbTimeout = setTimeout(() => {
+  const loading = document.getElementById('authLoading');
+  if (loading && loading.style.display !== 'none') {
+    console.warn('Firebase timeout — showing splash');
+    loading.style.display = 'none';
+    // Try localStorage fallback
+    try {
+      const saved = localStorage.getItem('liftlab-state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        state = Object.assign({ user: null, workouts: [], history: [], prs: {}, actualWeights: {} }, parsed);
+      }
+    } catch(e) {}
+    if (state.user && typeof showAppMain === 'function') showAppMain();
+    else showScreen('splash');
+  }
+}, 5000);
+</script>
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -1891,21 +1909,22 @@ const db = getFirestore(fbApp);
 // Expose to global scope so non-module functions can call them
 window._fb = { auth, db, doc, setDoc, getDoc, collection, addDoc, query, orderBy, limit, getDocs, onSnapshot, serverTimestamp, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
 
-// Auth state listener
+// Auth state listener — deferred so main script functions are available
 onAuthStateChanged(auth, async (user) => {
+  clearTimeout(window._fbTimeout); // Firebase responded — cancel fallback
   document.getElementById('authLoading').style.display = 'none';
   if (user) {
     window._fbUser = user;
-    // Try to load their saved state from Firestore
     await loadFromFirestore(user.uid);
-    // If no profile yet, show onboarding — else show app
-    if (state.user) {
-      showApp();
-    } else {
-      showOnboarding();
-    }
-    // Start Pit listener
     startPitListener();
+    // Call main script functions — they're guaranteed loaded since module scripts run after regular scripts
+    if (state.user) {
+      if (typeof showAppMain === 'function') showAppMain();
+      else window._showAppPending = true;
+    } else {
+      if (typeof showOnboardingMain === 'function') showOnboardingMain();
+      else window._showOnboardingPending = true;
+    }
   } else {
     window._fbUser = null;
     showScreen('splash');
@@ -1990,16 +2009,6 @@ window._getLeaderboard = async function() {
 };
 </script>
 <script>
-// ═══════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════
-let state = {
-  user: null,
-  workouts: [],
-  history: [],
-  prs: {}
-};
-
 let onboardData = {};
 let currentStep = 0;
 const TOTAL_STEPS = 6;
@@ -2013,13 +2022,29 @@ let sessionInterval = null;
 let sessionStart = null;
 let currentSessionWorkout = null;
 
+// Real showApp and showOnboarding — replace stubs
+function showAppMain() {
+  showScreen('app');
+  refreshUI();
+}
+function showOnboardingMain() {
+  showScreen('onboarding');
+  buildStepDots();
+  goToStep(0);
+}
+// Override stubs now that real functions exist
+window.showApp = showAppMain;
+window.showOnboarding = showOnboardingMain;
+
 // ═══════════════════════════════════════
-// INIT — Firebase handles auth state now
+// INIT
 // ═══════════════════════════════════════
 function init() {
-  // Firebase onAuthStateChanged handles everything
-  // Just ensure authLoading shows while Firebase initializes
-  document.getElementById('authLoading').style.display = 'flex';
+  // authLoading is already visible by default
+  // Firebase onAuthStateChanged will fire and handle routing
+  // Handle case where Firebase already fired before main script loaded
+  if (window._showAppPending) { showAppMain(); window._showAppPending = false; }
+  else if (window._showOnboardingPending) { showOnboardingMain(); window._showOnboardingPending = false; }
 }
 
 function save() {
@@ -2250,8 +2275,7 @@ function showApp() {
   refreshUI();
 }
 
-function refreshUI() {
-  const u = state.user;
+function refreshUI() {  const u = state.user;
   if (!u) return;
   const initials = u.name ? u.name[0].toUpperCase() : 'A';
 
@@ -2369,12 +2393,6 @@ function renderHistory() {
   `).join('');
 }
 
-function switchTab(tab) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-  document.getElementById('tab-btn-' + tab).classList.add('active');
-}
 
 // ═══════════════════════════════════════
 // AI WORKOUT GENERATOR
@@ -2926,37 +2944,6 @@ function toggleExDone(i) {
   updateSessionProgress();
 }
 
-function checkSet(exIdx, setIdx) {
-  const btn = document.getElementById(`chk-${exIdx}-${setIdx}`);
-  btn.classList.toggle('checked');
-  if (btn.classList.contains('checked')) {
-    const ex = currentSessionWorkout.exercises[exIdx];
-    const exName = ex.name;
-    const wtRaw = document.getElementById(`wt-${exIdx}-${setIdx}`).value;
-    const repsRaw = document.getElementById(`reps-${exIdx}-${setIdx}`).value;
-
-    // Parse weight — strip "lbs", "lb", spaces
-    const wt = parseFloat(wtRaw.replace(/[^0-9.]/g, ''));
-
-    if (!isNaN(wt) && wt > 0) {
-      // PR check
-      const isPR = !state.prs[exName] || wt > state.prs[exName];
-      if (isPR) {
-        state.prs[exName] = wt;
-        showToast(`🏆 New PR on ${exName}! ${wt} lbs`);
-      }
-      // Log actual weight for progressive overload (use last working set, not warm-up)
-      if (ex.sets[setIdx]?.label !== 'Warm-up') {
-        logActualWeight(exName, wt, repsRaw);
-      }
-    }
-
-    // Show rest timer
-    startRestTimer(exIdx, ex.rest);
-    updateSessionProgress();
-  }
-}
-
 let restTimers = {};
 function startRestTimer(exIdx, restStr) {
   const bar = document.getElementById(`rest-${exIdx}`);
@@ -2994,35 +2981,6 @@ function updateSessionProgress() {
   document.getElementById('sessionProgressFill').style.width = pct + '%';
 }
 
-function finishSession() {
-  const elapsed = Math.floor((Date.now() - sessionStart) / 1000 / 60);
-  clearInterval(sessionInterval);
-  Object.values(restTimers).forEach(t => clearInterval(t));
-
-  const checkedSets = document.querySelectorAll('.se-set-check.checked').length;
-  const prsThisSession = Object.keys(state.prs).length;
-
-  state.history.push({
-    name: currentSessionWorkout.name,
-    muscle: currentSessionWorkout.muscle,
-    date: new Date().toISOString(),
-    duration: elapsed || 1,
-    sets: checkedSets,
-    prs: prsThisSession
-  });
-  save();
-  closeSession();
-  showToast('Workout complete! Weights saved for next session 💪');
-  refreshUI();
-  switchTab('history');
-}
-
-function closeSession() {
-  clearInterval(sessionInterval);
-  Object.values(restTimers).forEach(t => clearInterval(t));
-  restTimers = {};
-  document.getElementById('workout-session').classList.remove('open');
-}
 
 // ═══════════════════════════════════════
 // STRENGTH CHARTS
@@ -3411,10 +3369,6 @@ function getWorkoutDays(n) {
   return patterns[n] || patterns[4];
 }
 
-// ═══════════════════════════════════════
-// OVERRIDE switchTab TO RENDER NEW TABS
-// ═══════════════════════════════════════
-const _origSwitchTab = switchTab;
 function switchTab(tab) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -3430,7 +3384,6 @@ function switchTab(tab) {
 // ═══════════════════════════════════════
 // OVERRIDE finishSession TO POST TO PIT
 // ═══════════════════════════════════════
-const _origFinishSession = finishSession;
 function finishSession() {
   const elapsed = Math.floor((Date.now() - sessionStart) / 1000 / 60);
   clearInterval(sessionInterval);
@@ -3484,7 +3437,6 @@ function finishSession() {
 // ═══════════════════════════════════════
 // OVERRIDE checkSet TO SHOW PR CELEBRATION
 // ═══════════════════════════════════════
-const _origCheckSet = checkSet;
 function checkSet(exIdx, setIdx) {
   const btn = document.getElementById(`chk-${exIdx}-${setIdx}`);
   btn.classList.toggle('checked');
