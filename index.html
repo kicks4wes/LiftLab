@@ -1313,7 +1313,52 @@ select.field-input { appearance: none; }
   transition: opacity 0.2s;
 }
 
-/* ─── TOAST ─── */
+.custom-confirm {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 600;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.custom-confirm.show { display: flex; }
+.custom-confirm-box {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+}
+.custom-confirm-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.custom-confirm-msg {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.custom-confirm-btns { display: flex; gap: 10px; }
+.custom-confirm-btns button {
+  flex: 1;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+.ccb-cancel { background: var(--card2); color: var(--text); border: 1px solid var(--border2) !important; }
+.ccb-confirm { background: var(--red); color: #fff; }
 .toast {
   position: fixed;
   bottom: calc(90px + env(safe-area-inset-bottom));
@@ -1853,6 +1898,18 @@ select.field-input { appearance: none; }
   <div class="session-body" id="sessionBody"></div>
 </div>
 
+<!-- CUSTOM CONFIRM -->
+<div class="custom-confirm" id="customConfirm">
+  <div class="custom-confirm-box">
+    <div class="custom-confirm-title" id="confirmTitle">EXIT WORKOUT?</div>
+    <div class="custom-confirm-msg" id="confirmMsg">Your progress won't be saved.</div>
+    <div class="custom-confirm-btns">
+      <button class="ccb-cancel" onclick="dismissConfirm()">STAY</button>
+      <button class="ccb-confirm" id="confirmAction">EXIT</button>
+    </div>
+  </div>
+</div>
+
 <!-- PR CELEBRATION -->
 <div id="pr-celebration">
   <div class="pr-cel-emoji">🏆</div>
@@ -2038,12 +2095,12 @@ window.signUpWithEmail = async function() {
 };
 
 window.signOutUser = async function() {
-  if (confirm('Sign out of LiftLab?')) {
+  showConfirm('SIGN OUT?', 'You can sign back in anytime.', async () => {
     if (window._pitUnsub) window._pitUnsub();
     await fbAuth.signOut();
     state = { user: null, workouts: [], history: [], prs: {}, actualWeights: {} };
     localStorage.removeItem('liftlab-state');
-  }
+  });
 };
 </script>
 <script>
@@ -3452,6 +3509,20 @@ function checkSet(exIdx, setIdx) {
     updateSessionProgress();
   }
 }
+function showConfirm(title, msg, onConfirm) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmAction').onclick = () => {
+    dismissConfirm();
+    onConfirm();
+  };
+  document.getElementById('customConfirm').classList.add('show');
+}
+
+function dismissConfirm() {
+  document.getElementById('customConfirm').classList.remove('show');
+}
+
 function closeSession() {
   clearInterval(sessionInterval);
   Object.values(restTimers).forEach(t => clearInterval(t));
@@ -3460,9 +3531,16 @@ function closeSession() {
 }
 
 function closeSessionWithConfirm() {
-  if (confirm('Exit workout? Your progress won\'t be saved.')) {
-    closeSession();
-  }
+  showConfirm('EXIT WORKOUT?', "Your progress won't be saved.", closeSession);
+}
+
+function resetApp() {
+  showConfirm('RESET EVERYTHING?', 'This will delete all your workouts and history.', () => {
+    state = { user: null, workouts: [], history: [], prs: {}, actualWeights: {} };
+    localStorage.removeItem('liftlab-state');
+    if (window._saveToFirestore) window._saveToFirestore();
+    location.reload();
+  });
 }
 
 function showToast(msg) {
@@ -3475,15 +3553,6 @@ function showToast(msg) {
 function loadExistingUser() {
   // Firebase handles this via onAuthStateChanged
   showToast('Signing you in...');
-}
-
-function resetApp() {
-  if (confirm('Reset everything? This will delete all your workouts and history.')) {
-    state = { user: null, workouts: [], history: [], prs: {}, actualWeights: {} };
-    localStorage.removeItem('liftlab-state');
-    if (window._saveToFirestore) window._saveToFirestore();
-    location.reload();
-  }
 }
 
 // Service Worker
