@@ -1613,19 +1613,14 @@ button, input, select, textarea,
   content: ''; flex: 1; height: 1px; background: var(--border2);
 }
 .pit-groups-btn {
-  display: flex; align-items: center; gap: 8px;
-  padding: 9px 16px; border-radius: 20px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 20px;
   border: 1px solid var(--border2); background: var(--card);
   color: var(--text2); font-family: 'DM Sans', sans-serif;
   font-size: 12px; font-weight: 700; cursor: pointer;
   touch-action: manipulation; white-space: nowrap;
-  transition: all 0.15s;
+  transition: all 0.15s; flex-shrink: 0;
 }
-.pit-groups-btn.active { border-color: var(--accent); color: var(--accent); background: #1a2200; }
-.pit-filter-bar {
-  display: flex; gap: 8px; padding: 12px 20px 0; overflow-x: auto; scrollbar-width: none;
-}
-.pit-filter-bar::-webkit-scrollbar { display: none; }
 </style>
 </head>
 <body>
@@ -1929,10 +1924,6 @@ button, input, select, textarea,
 
   <!-- THE PIT TAB -->
   <div class="tab-content" id="tab-pit">
-    <div class="pit-header">
-      <div class="pit-title">THE <span>PIT</span></div>
-      <div class="pit-live"><div class="pit-live-dot"></div>LIVE</div>
-    </div>
     <div id="pitContent"></div>
   </div>
 
@@ -3465,10 +3456,14 @@ function postToPit(type, data1, data2) {
   if (type === 'pr') lb[week][u.name].prs++;
   saveLeaderboard(lb);
 
-  // Firestore leaderboard
-  if (window._postLeaderboard) {
+  // Write to group leaderboard subcollection in Firestore
+  if (state.group) {
     const myLb = lb[week][u.name];
-    window._postLeaderboard(u.name, u.name[0].toUpperCase(), myLb.pts, myLb.workouts, myLb.prs);
+    fbDb.collection('groups').doc(state.group.code)
+      .collection('leaderboard')
+      .doc(`${week}_${u.name}`)
+      .set({ name: u.name, initials: u.name[0].toUpperCase(), pts: myLb.pts, workouts: myLb.workouts, prs: myLb.prs, week }, { merge: true })
+      .catch(() => {});
   }
 }
 
@@ -3487,51 +3482,81 @@ function timeAgo(dateStr) {
   return `${Math.floor(diff/86400)}d ago`;
 }
 
+async function getGroupLeaderboard(code) {
+  const week = getWeekKey();
+  try {
+    const snap = await fbDb.collection('groups').doc(code)
+      .collection('leaderboard')
+      .where('week', '==', week)
+      .orderBy('pts', 'desc')
+      .get();
+    if (snap.docs.length) return snap.docs.map(d => d.data());
+  } catch(e) {}
+  // Fallback: local leaderboard
+  const lb = getLeaderboard();
+  return Object.values(lb[week] || {}).sort((a, b) => b.pts - a.pts);
+}
+
 async function renderPit() {
   const el = document.getElementById('pitContent');
   const u = state.user;
-  const hasGroup = !!state.group;
+  const group = state.group;
 
-  // Use live Firestore feed if available, fallback to local
+  // ── NO GROUP: show join/create prompt ──
+  if (!group) {
+    el.innerHTML = `
+      <div style="padding:28px 20px 0;display:flex;align-items:center;justify-content:space-between">
+        <div class="pit-title">THE <span style="color:var(--accent)">PIT</span></div>
+      </div>
+      <div style="padding:32px 24px;text-align:center">
+        <div style="font-size:52px;margin-bottom:16px">🔥</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;margin-bottom:10px">SQUAD-ONLY ACCESS</div>
+        <div style="font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:28px;max-width:290px;margin-left:auto;margin-right:auto">
+          The Pit is private. Create a squad and share the invite code with your crew — only members see each other's lifts and compete on the leaderboard.
+        </div>
+        <button onclick="openGroupsModal()" style="width:100%;max-width:300px;display:block;margin:0 auto 12px;padding:18px;border-radius:var(--radius);border:none;background:var(--accent);color:#000;font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;letter-spacing:2px;cursor:pointer;touch-action:manipulation">
+          🔑 CREATE A SQUAD
+        </button>
+        <button onclick="openGroupsModal()" style="width:100%;max-width:300px;display:block;margin:0 auto;padding:16px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--card);color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:1px;cursor:pointer;touch-action:manipulation">
+          JOIN WITH CODE
+        </button>
+      </div>
+      <div style="margin:0 20px 24px;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:16px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px">HOW TO EARN POINTS</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text2)">
+          <span>💪 Complete a workout — <strong style="color:var(--accent)">+10 pts</strong></span>
+          <span>🏆 Hit a new PR — <strong style="color:var(--accent)">+25 pts</strong></span>
+          <span>🔥 Maintain a streak — <strong style="color:var(--accent)">+15 pts</strong></span>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // ── IN A GROUP: squad view ──
   const allFeed = window._livePitFeed || getPitFeed();
-
-  // Filter feed by group if active
-  const feed = (hasGroup && pitGroupFilter)
-    ? allFeed.filter(item => item.groupCode === state.group.code)
-    : allFeed;
-
-  // Get leaderboard — try Firestore first
-  let ranked = [];
-  if (window._getLeaderboard) {
-    ranked = await window._getLeaderboard();
-  }
-  if (!ranked.length) {
-    const lb = getLeaderboard();
-    const week = getWeekKey();
-    ranked = Object.values(lb[week] || {}).sort((a, b) => b.pts - a.pts);
-  }
-
+  const feed = allFeed.filter(item => item.groupCode === group.code);
+  const ranked = await getGroupLeaderboard(group.code);
   const rankIcons = ['gold', 'silver', 'bronze'];
   let html = '';
 
-  // Filter bar
-  html += `<div class="pit-filter-bar">
-    <button class="pit-share-btn" style="margin:0;padding:10px 18px;font-size:16px;border-radius:20px;width:auto;flex-shrink:0" onclick="shareToFeed()">📢 SHARE</button>
-    ${hasGroup ? `
-      <button class="pit-groups-btn ${pitGroupFilter ? 'active' : ''}" onclick="togglePitFilter()">
-        ${pitGroupFilter ? '👥 ' + state.group.name : '🌍 All Lifters'}
-      </button>
-    ` : ''}
-    <button class="pit-groups-btn" onclick="openGroupsModal()" style="flex-shrink:0">
-      ${hasGroup ? '⚙️ Group' : '👥 Join Group'}
-    </button>
-  </div>`;
+  // Header
+  html += `
+    <div style="padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:2px">YOUR SQUAD</div>
+        <div class="pit-title" style="font-size:26px">${group.name.toUpperCase()}</div>
+      </div>
+      <button class="pit-groups-btn" onclick="openGroupsModal()">⚙️ Manage</button>
+    </div>
+    <div style="padding:12px 20px 0">
+      <button class="pit-share-btn" onclick="shareToFeed()">📢 SHARE YOUR WORKOUT</button>
+    </div>`;
 
-  // Weekly leaderboard
+  // Squad leaderboard
+  html += `<div class="pit-leaderboard">
+    <div class="pit-lb-header">THIS WEEK'S LEADERBOARD<span class="pit-lb-week">Resets Monday</span></div>`;
   if (ranked.length) {
-    html += `<div class="pit-leaderboard">
-      <div class="pit-lb-header">THIS WEEK'S LEADERBOARD<span class="pit-lb-week">Resets Monday</span></div>`;
-    ranked.slice(0, 5).forEach((entry, i) => {
+    ranked.slice(0, 10).forEach((entry, i) => {
       const isMe = u && entry.name === u.name;
       html += `<div class="pit-lb-row ${isMe ? 'me' : ''}">
         <div class="pit-lb-rank ${rankIcons[i] || ''}">${i + 1}</div>
@@ -3543,24 +3568,21 @@ async function renderPit() {
         <div><div class="pit-lb-pts">${entry.pts}</div><div class="pit-lb-pts-label">pts</div></div>
       </div>`;
     });
-    html += '</div>';
+  } else {
+    html += `<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px;line-height:1.6">
+      No activity yet this week.<br>Complete a workout and get things started.
+    </div>`;
   }
+  html += '</div>';
 
-  html += `<div style="margin:0 20px 16px;background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:12px 14px">
-    <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px">HOW TO EARN POINTS</div>
-    <div style="font-size:13px;color:var(--text2);display:flex;flex-direction:column;gap:4px">
-      <span>💪 Complete a workout — <strong style="color:var(--accent)">+10 pts</strong></span>
-      <span>🏆 Hit a new PR — <strong style="color:var(--accent)">+25 pts</strong></span>
-      <span>🔥 Maintain a streak — <strong style="color:var(--accent)">+15 pts</strong></span>
-    </div>
-  </div>`;
-
-  // Activity feed
+  // Squad activity feed
   const feedItems = Array.isArray(feed) ? feed : [];
   if (feedItems.length) {
-    html += `<div class="pit-feed"><div class="pit-feed-title">ACTIVITY FEED</div>`;
-    feedItems.slice(0, 20).forEach(item => {
-      const timeStr = item.time ? timeAgo(item.time) : item.timestamp ? timeAgo(item.timestamp?.toDate?.()?.toISOString() || item.timestamp) : 'recently';
+    html += `<div class="pit-feed"><div class="pit-feed-title">SQUAD ACTIVITY</div>`;
+    feedItems.slice(0, 30).forEach(item => {
+      const timeStr = item.time
+        ? timeAgo(item.time)
+        : timeAgo(item.timestamp?.toDate?.()?.toISOString() || item.timestamp) || 'recently';
       html += `<div class="pit-feed-item">
         <div class="pit-feed-avatar">${item.initials || item.name?.[0] || '?'}</div>
         <div class="pit-feed-content">
@@ -3573,9 +3595,9 @@ async function renderPit() {
     html += '</div>';
   } else {
     html += `<div class="pit-empty">
-      <div class="pe-icon">🔥</div>
-      <h3>THE PIT IS QUIET</h3>
-      <p>Complete a workout to be the first one in The Pit this week. Get after it.</p>
+      <div class="pe-icon">💪</div>
+      <h3>SQUAD IS WARMING UP</h3>
+      <p>Nobody in ${group.name} has posted yet this week.<br>Finish a workout and fire the first shot.</p>
     </div>`;
   }
 
@@ -4010,8 +4032,6 @@ function saveCustomWorkout() {
 // ═══════════════════════════════════════
 // PRIVATE GROUPS — THE PIT
 // ═══════════════════════════════════════
-let pitGroupFilter = false; // false = all, true = group only
-
 function openGroupsModal() {
   renderGroupsContent();
   document.getElementById('groups-modal').classList.add('open');
@@ -4106,7 +4126,6 @@ async function joinGroup() {
 
 function leaveGroup() {
   state.group = null;
-  pitGroupFilter = false;
   save();
   renderGroupsContent();
   renderPit();
@@ -4119,11 +4138,6 @@ function copyGroupCode(code) {
   } else {
     showToast(`Code: ${code}`);
   }
-}
-
-function togglePitFilter() {
-  pitGroupFilter = !pitGroupFilter;
-  renderPit();
 }
 
 // Service Worker
