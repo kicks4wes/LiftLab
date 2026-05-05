@@ -972,13 +972,16 @@ select.field-input { appearance: none; }
   gap: 4px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--accent);
-  background: #1a2200;
-  border: 1px solid #3a5a10;
   border-radius: 6px;
   padding: 3px 8px;
   margin-left: 8px;
+  color: var(--accent);
+  background: #1a2200;
+  border: 1px solid #3a5a10;
 }
+.overload-badge.prog-up { color: var(--accent); background: #1a2200; border-color: #3a5a10; }
+.overload-badge.prog-hold { color: #5bc8fa; background: #001a2a; border-color: #105080; }
+.overload-badge.prog-down { color: var(--orange); background: #1a0800; border-color: #603010; }
 
 /* ─── STRENGTH CHARTS ─── */
 .chart-tab-bar {
@@ -3107,27 +3110,64 @@ const ALTERNATIVES = {
 // ═══════════════════════════════════════
 // PROGRESSIVE OVERLOAD ENGINE
 // ═══════════════════════════════════════
-// Stores: state.actualWeights[exerciseName] = { weight, reps, date }
-// On next generation: if actualWeight exists, use it + 5 lbs (compound) or 2.5 lbs (isolation)
+// state.actualWeights[exName] = {
+//   weight: number       — max working weight used last session
+//   reps: string         — reps hit on last working set
+//   setsCompleted: int   — working sets checked off
+//   totalSets: int       — total working sets planned
+//   targetReps: string   — planned rep range e.g. "8–10"
+//   date: ISO string
+// }
 
+function parseRepRange(str) {
+  const nums = String(str || '10').match(/\d+/g);
+  if (!nums) return { min: 10, max: 10 };
+  const vals = nums.map(Number);
+  return { min: Math.min(...vals), max: Math.max(...vals) };
+}
+
+function isCompoundType(type) {
+  return type === 'Compound' || type === 'Compound Curl';
+}
+
+// Returns the weight to pre-fill for the next session
 function getProgressiveWeight(exName, baseWeight, type) {
   if (!state.actualWeights) state.actualWeights = {};
   const logged = state.actualWeights[exName];
-  if (!logged) return baseWeight;
+  if (!logged || !logged.weight) return baseWeight;
 
-  // Only progress if logged within last 14 days
   const daysSince = (Date.now() - new Date(logged.date)) / 86400000;
-  if (daysSince > 14) return baseWeight;
+  if (daysSince > 21) return baseWeight; // stale — reset to base
 
-  const increment = (type === 'Compound' || type === 'Compound Curl') ? 5 : 2.5;
-  const newWeight = r5(logged.weight + increment);
-  return newWeight;
+  const increment = isCompoundType(type) ? 5 : 2.5;
+  const { min: tMin, max: tMax } = parseRepRange(logged.targetReps);
+  const actualReps = parseRepRange(logged.reps).min;
+  const setsRatio = (logged.setsCompleted || 0) / Math.max(logged.totalSets || 1, 1);
+
+  if (setsRatio >= 1.0 && actualReps >= tMax) return r5(logged.weight + increment); // earned it
+  if (setsRatio >= 0.67 && actualReps >= tMin) return logged.weight;                // hold
+  return r5(Math.max(logged.weight - increment, increment));                         // deload
 }
 
-function logActualWeight(exName, weight, reps) {
-  if (!state.actualWeights) state.actualWeights = {};
-  state.actualWeights[exName] = { weight: parseFloat(weight), reps, date: new Date().toISOString() };
-  save();
+// Returns a badge descriptor for the session UI — null if no data
+function getProgressionStatus(exName, type) {
+  if (!state.actualWeights) return null;
+  const logged = state.actualWeights[exName];
+  if (!logged || !logged.weight) return null;
+
+  const daysSince = (Date.now() - new Date(logged.date)) / 86400000;
+  if (daysSince > 21) return null;
+
+  const increment = isCompoundType(type) ? 5 : 2.5;
+  const { min: tMin, max: tMax } = parseRepRange(logged.targetReps);
+  const actualReps = parseRepRange(logged.reps).min;
+  const setsRatio = (logged.setsCompleted || 0) / Math.max(logged.totalSets || 1, 1);
+
+  if (setsRatio >= 1.0 && actualReps >= tMax)
+    return { label: `↑ +${increment} lbs`, cls: 'prog-up' };
+  if (setsRatio >= 0.67 && actualReps >= tMin)
+    return { label: '→ Hold', cls: 'prog-hold' };
+  return { label: `↓ −${increment} lbs`, cls: 'prog-down' };
 }
 
 // ═══════════════════════════════════════
@@ -3145,9 +3185,8 @@ function startSession(workoutIndex) {
   body.innerHTML = w.exercises.map((ex, i) => {
     const alts = ALTERNATIVES[ex.name] || [];
     const hasAlts = alts.length > 0;
-    // Check if we have a progressive overload note
-    const logged = state.actualWeights?.[ex.name];
-    const overloadNote = logged ? `<span class="overload-badge">↑ Progressive</span>` : '';
+    const status = getProgressionStatus(ex.name, ex.type || 'Isolation');
+    const overloadNote = status ? `<span class="overload-badge ${status.cls}">${status.label}</span>` : '';
 
     return `
     <div class="session-exercise" id="sex-${i}">
@@ -3195,6 +3234,7 @@ function startSession(workoutIndex) {
     </div>
   `}).join('');
 
+  window._sessionLog = {};
   sessionStart = Date.now();
   sessionInterval = setInterval(updateSessionTimer, 1000);
   updateSessionProgress();
@@ -3757,6 +3797,9 @@ function finishSession() {
     });
   });
 
+  if (!state.actualWeights) state.actualWeights = {};
+  Object.assign(state.actualWeights, window._sessionLog || {});
+
   state.history.push({
     name: currentSessionWorkout.name,
     muscle: currentSessionWorkout.muscle,
@@ -3805,7 +3848,18 @@ function checkSet(exIdx, setIdx) {
         setTimeout(() => showPRCelebration(exName, wt), 400);
       }
       if (ex.sets[setIdx]?.label !== 'Warm-up') {
-        logActualWeight(exName, wt, repsRaw);
+        if (!window._sessionLog[exName]) {
+          const workingSets = ex.sets.filter(s => s.label !== 'Warm-up');
+          window._sessionLog[exName] = {
+            weight: 0, reps: repsRaw, setsCompleted: 0,
+            totalSets: workingSets.length,
+            targetReps: workingSets[0]?.reps || '10',
+            date: new Date().toISOString()
+          };
+        }
+        const log = window._sessionLog[exName];
+        log.setsCompleted += 1;
+        if (wt > log.weight) { log.weight = wt; log.reps = repsRaw; }
       }
     }
 
