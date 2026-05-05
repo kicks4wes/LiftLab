@@ -414,6 +414,16 @@ select.field-input { appearance: none; }
   padding: 4px 10px;
 }
 .wc-chip.highlight { color: var(--accent); background: #1a2200; }
+.wc-delete-btn {
+  position: absolute; top: 12px; right: 12px;
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--border2); background: var(--card2);
+  color: var(--text3); font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  touch-action: manipulation; z-index: 1;
+  transition: border-color 0.15s, color 0.15s;
+}
+.wc-delete-btn:active { border-color: var(--red); color: var(--red); }
 
 /* ─── GENERATE BUTTON ─── */
 .generate-card {
@@ -2574,18 +2584,33 @@ function renderWorkouts() {
     return;
   }
   el.innerHTML = state.workouts.map((w, i) => `
-    <div class="workout-card fade-in" onclick="startSession(${i})" style="position:relative">
+    <div class="workout-card fade-in" style="position:relative">
       <div class="workout-card-accent"></div>
-      ${w.isCustom ? '<span style="position:absolute;top:12px;right:12px;font-size:9px;font-weight:700;letter-spacing:1px;background:#001a2a;color:#5bc8fa;border:1px solid #105080;border-radius:4px;padding:2px 6px">CUSTOM</span>' : ''}
-      <div class="wc-day">${w.muscle}</div>
-      <div class="wc-name">${w.name}</div>
-      <div class="wc-meta">
-        <span class="wc-chip highlight">⏱ ${w.duration} min</span>
-        <span class="wc-chip">${w.exercises.length} exercises</span>
-        <span class="wc-chip">${w.goal}</span>
+      <button class="wc-delete-btn" onclick="deleteWorkout(event,${i})" aria-label="Delete workout">✕</button>
+      ${w.isCustom ? '<span style="position:absolute;top:12px;right:40px;font-size:9px;font-weight:700;letter-spacing:1px;background:#001a2a;color:#5bc8fa;border:1px solid #105080;border-radius:4px;padding:2px 6px">CUSTOM</span>' : ''}
+      <div onclick="startSession(${i})" style="cursor:pointer">
+        <div class="wc-day">${w.muscle}</div>
+        <div class="wc-name">${w.name}</div>
+        <div class="wc-meta">
+          <span class="wc-chip highlight">⏱ ${w.duration} min</span>
+          <span class="wc-chip">${w.exercises.length} exercises</span>
+          <span class="wc-chip">${w.goal}</span>
+        </div>
       </div>
     </div>
   `).join('') + addCards;
+}
+
+function deleteWorkout(e, i) {
+  e.stopPropagation();
+  const name = state.workouts[i]?.name || 'this workout';
+  showConfirm('DELETE WORKOUT?', `"${name}" will be removed from your program.`, () => {
+    state.workouts.splice(i, 1);
+    save();
+    renderWorkouts();
+    renderWeeklyProgram();
+    showToast('Workout removed');
+  });
 }
 
 function renderHistory() {
