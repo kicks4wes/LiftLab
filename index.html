@@ -1478,6 +1478,144 @@ select.field-input { appearance: none; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ─── IPHONE TOUCH FIXES ─── */
+button, input, select, textarea,
+.workout-card, .generate-card, .swap-option, .option-btn, .goal-btn,
+.pit-share-btn, .week-day, .chart-tab-pill, .pit-lb-row,
+.ai-day-btn, .tab-btn, .back-btn, .splash-btn, .next-btn {
+  touch-action: manipulation;
+}
+.tab-btn { -webkit-tap-highlight-color: rgba(200,245,66,0.15); }
+
+/* ─── CUSTOM WORKOUT BUILDER ─── */
+#custom-workout-screen {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  z-index: 200;
+  display: none;
+  flex-direction: column;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+#custom-workout-screen.open { display: flex; }
+.cw-ex-card {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  position: relative;
+}
+.cw-ex-num {
+  font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 8px;
+}
+.cw-ex-remove {
+  position: absolute; top: 12px; right: 12px;
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--border2); background: var(--card2);
+  color: var(--red); font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  touch-action: manipulation;
+}
+.cw-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+.cw-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--text3); margin-bottom: 4px;
+}
+.add-exercise-btn {
+  width: 100%; padding: 14px; border-radius: 10px;
+  border: 2px dashed var(--border2); background: transparent;
+  color: var(--accent); font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px; font-weight: 800; letter-spacing: 1px;
+  cursor: pointer; margin-bottom: 20px; touch-action: manipulation;
+  transition: border-color 0.2s;
+}
+.add-exercise-btn:active { border-color: var(--accent); }
+.cw-empty {
+  text-align: center; padding: 24px 20px;
+  color: var(--text3); font-size: 13px; line-height: 1.6;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; margin-bottom: 12px;
+}
+
+/* ─── PRIVATE GROUPS ─── */
+.groups-modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 700;
+  display: none; align-items: flex-end; justify-content: center;
+}
+.groups-modal.open { display: flex; }
+.groups-sheet {
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 24px calc(20px + env(safe-area-inset-bottom));
+  width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.groups-handle {
+  width: 36px; height: 4px; background: var(--border2);
+  border-radius: 2px; margin: 0 auto 20px;
+}
+.groups-sheet-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px; font-weight: 800; margin-bottom: 4px;
+}
+.groups-sheet-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.5; }
+.group-code-display {
+  background: #1a2200; border: 1px solid #3a5a10;
+  border-radius: 10px; padding: 16px; text-align: center; margin-bottom: 16px;
+}
+.group-code-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--accent-dim); margin-bottom: 6px;
+}
+.group-code-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 38px; font-weight: 900; letter-spacing: 8px; color: var(--accent);
+}
+.group-code-copy {
+  font-size: 12px; color: var(--accent-dim); margin-top: 6px;
+  cursor: pointer; touch-action: manipulation;
+}
+.group-active-card {
+  background: var(--card2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 14px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 16px;
+}
+.group-active-name { font-size: 15px; font-weight: 700; }
+.group-active-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.group-leave-btn {
+  background: transparent; border: 1px solid var(--red); color: var(--red);
+  font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 800;
+  letter-spacing: 1px; padding: 7px 14px; border-radius: 6px;
+  cursor: pointer; touch-action: manipulation; flex-shrink: 0;
+}
+.groups-divider {
+  text-align: center; font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--text3); margin: 16px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.groups-divider::before, .groups-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border2);
+}
+.pit-groups-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 16px; border-radius: 20px;
+  border: 1px solid var(--border2); background: var(--card);
+  color: var(--text2); font-family: 'DM Sans', sans-serif;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  touch-action: manipulation; white-space: nowrap;
+  transition: all 0.15s;
+}
+.pit-groups-btn.active { border-color: var(--accent); color: var(--accent); background: #1a2200; }
+.pit-filter-bar {
+  display: flex; gap: 8px; padding: 12px 20px 0; overflow-x: auto; scrollbar-width: none;
+}
+.pit-filter-bar::-webkit-scrollbar { display: none; }
 </style>
 </head>
 <body>
@@ -1858,6 +1996,7 @@ select.field-input { appearance: none; }
   <div class="ai-header">
     <button class="back-btn" onclick="closeAIScreen()">←</button>
     <div class="ai-header-title">AI WORKOUT BUILDER</div>
+    <button onclick="closeAIScreen();openCustomBuilder()" style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--accent);background:none;border:1px solid var(--accent-dim);border-radius:6px;padding:6px 10px;cursor:pointer;touch-action:manipulation;white-space:nowrap">✏️ CUSTOM</button>
   </div>
   <div class="ai-body">
 
@@ -1898,6 +2037,60 @@ select.field-input { appearance: none; }
 
     <div class="generated-workout" id="generatedWorkout"></div>
 
+  </div>
+</div>
+
+<!-- CUSTOM WORKOUT BUILDER SCREEN -->
+<div id="custom-workout-screen">
+  <div class="ai-header">
+    <button class="back-btn" onclick="closeCustomBuilder()">←</button>
+    <div class="ai-header-title">BUILD YOUR WORKOUT</div>
+  </div>
+  <div class="ai-body" style="padding-bottom:40px">
+    <div class="field-group">
+      <label class="field-label">Workout Name</label>
+      <input class="field-input" type="text" id="cw-name" placeholder="e.g. Monday Push Day" autocomplete="off">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Muscle Focus</label>
+      <div class="option-grid" id="cw-muscle-grid">
+        <button class="option-btn" data-val="Back & Biceps" onclick="selectCWMuscle(this)"><span class="opt-icon">💪</span>Back & Biceps</button>
+        <button class="option-btn" data-val="Chest & Triceps" onclick="selectCWMuscle(this)"><span class="opt-icon">🫁</span>Chest & Triceps</button>
+        <button class="option-btn" data-val="Legs" onclick="selectCWMuscle(this)"><span class="opt-icon">🦵</span>Legs</button>
+        <button class="option-btn" data-val="Shoulders & Arms" onclick="selectCWMuscle(this)"><span class="opt-icon">🏋️</span>Shoulders & Arms</button>
+        <button class="option-btn" data-val="Full Body" onclick="selectCWMuscle(this)"><span class="opt-icon">⚡</span>Full Body</button>
+        <button class="option-btn" data-val="Custom" onclick="selectCWMuscle(this)"><span class="opt-icon">✏️</span>Custom</button>
+      </div>
+    </div>
+    <div>
+      <div class="field-label" style="margin-bottom:12px">EXERCISES</div>
+      <div id="cw-exercises"></div>
+      <button class="add-exercise-btn" onclick="addCWExercise()">+ ADD EXERCISE</button>
+    </div>
+    <button class="gen-btn" onclick="saveCustomWorkout()">💾 SAVE WORKOUT</button>
+  </div>
+</div>
+
+<!-- GROUPS MODAL -->
+<div class="groups-modal" id="groups-modal">
+  <div class="groups-sheet">
+    <div class="groups-handle"></div>
+    <div class="groups-sheet-title">SQUAD GROUPS</div>
+    <div class="groups-sheet-sub">Train with your crew privately. Create a group and share the code — only members see each other's lifts and leaderboard.</div>
+    <div id="groups-content"></div>
+    <div class="groups-divider" id="groups-create-divider">CREATE A GROUP</div>
+    <div class="field-group" id="groups-create-form">
+      <label class="field-label">Group Name</label>
+      <input class="field-input" type="text" id="group-name-input" placeholder="e.g. Monday Crew" autocomplete="off">
+    </div>
+    <button class="gen-btn" id="groups-create-btn" onclick="createGroup()" style="margin-bottom:16px">🔑 CREATE GROUP</button>
+    <div class="groups-divider">JOIN WITH CODE</div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <input class="field-input" type="text" id="group-code-input" placeholder="6-char code"
+        style="flex:1;text-transform:uppercase;letter-spacing:4px;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800" maxlength="6" autocomplete="off">
+      <button onclick="joinGroup()" style="padding:14px 20px;border-radius:10px;border:none;background:var(--accent);color:#000;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;cursor:pointer;touch-action:manipulation;white-space:nowrap;flex-shrink:0">JOIN</button>
+    </div>
+    <button onclick="closeGroupsModal()" style="width:100%;margin-top:16px;padding:14px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;cursor:pointer;touch-action:manipulation">CLOSE</button>
   </div>
 </div>
 
@@ -2219,7 +2412,7 @@ function prevStep() {
 }
 
 function selectGoal(btn) {
-  document.querySelectorAll('.goal-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('#onboarding .step[data-step="2"] .goal-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   selectedGoal = btn.dataset.val;
   document.getElementById('goal-next').disabled = false;
@@ -2356,16 +2549,34 @@ function weeklyPRs() {
 
 function renderWorkouts() {
   const el = document.getElementById('myWorkouts');
-  if (!state.workouts.length) {
-    el.innerHTML = `<div class="generate-card" onclick="openAIScreen()">
-      <div class="generate-icon">🤖</div>
-      <div class="generate-text"><h3>GENERATE AI WORKOUT</h3><p>Build a personalized workout based on your profile</p></div>
+  const addCards = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+      <div class="generate-card" onclick="openAIScreen()" style="flex-direction:column;gap:8px;text-align:center;padding:16px">
+        <div class="generate-icon" style="font-size:28px">🤖</div>
+        <div class="generate-text"><h3 style="font-size:16px">AI WORKOUT</h3></div>
+      </div>
+      <div class="generate-card" onclick="openCustomBuilder()" style="flex-direction:column;gap:8px;text-align:center;padding:16px;background:linear-gradient(135deg,#001a2a,#000f18);border-color:#105080">
+        <div class="generate-icon" style="font-size:28px">✏️</div>
+        <div class="generate-text"><h3 style="font-size:16px;color:#5bc8fa">CUSTOM</h3></div>
+      </div>
     </div>`;
+
+  if (!state.workouts.length) {
+    el.innerHTML = `
+      <div class="generate-card" onclick="openAIScreen()">
+        <div class="generate-icon">🤖</div>
+        <div class="generate-text"><h3>GENERATE AI WORKOUT</h3><p>Build a personalized workout based on your profile</p></div>
+      </div>
+      <div class="generate-card" onclick="openCustomBuilder()" style="background:linear-gradient(135deg,#001a2a,#000f18);border-color:#105080">
+        <div class="generate-icon">✏️</div>
+        <div class="generate-text" style="color:#5bc8fa"><h3>BUILD CUSTOM WORKOUT</h3><p style="color:#3a7a9a">Add your own exercises and sets</p></div>
+      </div>`;
     return;
   }
   el.innerHTML = state.workouts.map((w, i) => `
-    <div class="workout-card fade-in" onclick="startSession(${i})">
+    <div class="workout-card fade-in" onclick="startSession(${i})" style="position:relative">
       <div class="workout-card-accent"></div>
+      ${w.isCustom ? '<span style="position:absolute;top:12px;right:12px;font-size:9px;font-weight:700;letter-spacing:1px;background:#001a2a;color:#5bc8fa;border:1px solid #105080;border-radius:4px;padding:2px 6px">CUSTOM</span>' : ''}
       <div class="wc-day">${w.muscle}</div>
       <div class="wc-name">${w.name}</div>
       <div class="wc-meta">
@@ -2374,11 +2585,7 @@ function renderWorkouts() {
         <span class="wc-chip">${w.goal}</span>
       </div>
     </div>
-  `).join('') + `
-    <div class="generate-card" onclick="openAIScreen()" style="margin-top:4px">
-      <div class="generate-icon">➕</div>
-      <div class="generate-text"><h3>ADD ANOTHER WORKOUT</h3><p>Generate a new AI workout</p></div>
-    </div>`;
+  `).join('') + addCards;
 }
 
 function renderHistory() {
@@ -3214,6 +3421,7 @@ function postToPit(type, data1, data2) {
     text,
     emoji,
     time: new Date().toISOString(),
+    groupCode: state.group?.code || null,
   };
 
   // Local feed
@@ -3257,9 +3465,15 @@ function timeAgo(dateStr) {
 async function renderPit() {
   const el = document.getElementById('pitContent');
   const u = state.user;
+  const hasGroup = !!state.group;
 
   // Use live Firestore feed if available, fallback to local
-  const feed = window._livePitFeed || getPitFeed();
+  const allFeed = window._livePitFeed || getPitFeed();
+
+  // Filter feed by group if active
+  const feed = (hasGroup && pitGroupFilter)
+    ? allFeed.filter(item => item.groupCode === state.group.code)
+    : allFeed;
 
   // Get leaderboard — try Firestore first
   let ranked = [];
@@ -3275,8 +3489,17 @@ async function renderPit() {
   const rankIcons = ['gold', 'silver', 'bronze'];
   let html = '';
 
-  html += `<div style="padding:16px 20px 0">
-    <button class="pit-share-btn" onclick="shareToFeed()">📢 SHARE YOUR WORKOUT</button>
+  // Filter bar
+  html += `<div class="pit-filter-bar">
+    <button class="pit-share-btn" style="margin:0;padding:10px 18px;font-size:16px;border-radius:20px;width:auto;flex-shrink:0" onclick="shareToFeed()">📢 SHARE</button>
+    ${hasGroup ? `
+      <button class="pit-groups-btn ${pitGroupFilter ? 'active' : ''}" onclick="togglePitFilter()">
+        ${pitGroupFilter ? '👥 ' + state.group.name : '🌍 All Lifters'}
+      </button>
+    ` : ''}
+    <button class="pit-groups-btn" onclick="openGroupsModal()" style="flex-shrink:0">
+      ${hasGroup ? '⚙️ Group' : '👥 Join Group'}
+    </button>
   </div>`;
 
   // Weekly leaderboard
@@ -3556,6 +3779,17 @@ function wireButtons() {
     });
   }
 
+  // Groups modal backdrop close
+  const groupsModal = document.getElementById('groups-modal');
+  if (groupsModal) {
+    groupsModal.addEventListener('touchend', function(e) {
+      if (e.target === this) { e.preventDefault(); closeGroupsModal(); }
+    });
+    groupsModal.addEventListener('click', function(e) {
+      if (e.target === this) closeGroupsModal();
+    });
+  }
+
   // Sign out button
   const signOutBtn = document.getElementById('signOutBtn');
   if (signOutBtn) {
@@ -3596,9 +3830,23 @@ function closeSession() {
   document.getElementById('workout-session').classList.remove('open');
 }
 
+// ─── BUG FIX: confirm dialog helpers ───
+function dismissConfirm() {
+  document.getElementById('customConfirm').classList.remove('show');
+}
+
+function showConfirm(title, msg, callback) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  window._confirmCallback = callback;
+  document.getElementById('customConfirm').classList.add('show');
+}
+
 function closeSessionWithConfirm() {
-  closeSession();
-  showToast('Workout exited');
+  showConfirm('EXIT WORKOUT?', "Your progress won't be saved.", () => {
+    closeSession();
+    showToast('Workout exited');
+  });
 }
 
 function resetApp() {
@@ -3613,6 +3861,244 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════
+// CUSTOM WORKOUT BUILDER
+// ═══════════════════════════════════════
+let cwMuscle = null;
+let cwExercises = [];
+
+function openCustomBuilder() {
+  cwMuscle = null;
+  cwExercises = [];
+  document.getElementById('cw-name').value = '';
+  document.querySelectorAll('#cw-muscle-grid .option-btn').forEach(b => b.classList.remove('selected'));
+  renderCWExercises();
+  document.getElementById('custom-workout-screen').classList.add('open');
+  document.getElementById('custom-workout-screen').scrollTop = 0;
+}
+
+function closeCustomBuilder() {
+  document.getElementById('custom-workout-screen').classList.remove('open');
+}
+
+function selectCWMuscle(btn) {
+  document.querySelectorAll('#cw-muscle-grid .option-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  cwMuscle = btn.dataset.val;
+}
+
+function addCWExercise() {
+  cwExercises.push({ name: '', sets: 3, reps: '10', weight: '' });
+  renderCWExercises();
+  // Scroll to new exercise
+  setTimeout(() => {
+    const el = document.getElementById('custom-workout-screen');
+    el.scrollTop = el.scrollHeight;
+  }, 80);
+}
+
+function removeCWExercise(i) {
+  cwExercises.splice(i, 1);
+  renderCWExercises();
+}
+
+function renderCWExercises() {
+  const el = document.getElementById('cw-exercises');
+  if (!cwExercises.length) {
+    el.innerHTML = '<div class="cw-empty">No exercises yet.<br>Tap <strong style="color:var(--accent)">+ ADD EXERCISE</strong> below to build your workout.</div>';
+    return;
+  }
+  el.innerHTML = cwExercises.map((ex, i) => `
+    <div class="cw-ex-card">
+      <div class="cw-ex-num">EXERCISE ${String(i + 1).padStart(2, '0')}</div>
+      <button class="cw-ex-remove" onclick="removeCWExercise(${i})">✕</button>
+      <input class="field-input" type="text" placeholder="Exercise name (e.g. Bench Press)"
+        value="${ex.name.replace(/"/g, '&quot;')}"
+        oninput="cwExercises[${i}].name=this.value"
+        style="margin-bottom:8px">
+      <div class="cw-row">
+        <div>
+          <div class="cw-label">SETS</div>
+          <select class="field-input" onchange="cwExercises[${i}].sets=parseInt(this.value)"
+            style="padding:10px 8px">
+            ${[1,2,3,4,5,6].map(n => `<option value="${n}"${n===ex.sets?' selected':''}>${n}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <div class="cw-label">REPS</div>
+          <input class="field-input" type="text" placeholder="8-12"
+            value="${ex.reps}" oninput="cwExercises[${i}].reps=this.value"
+            style="padding:10px 8px;text-align:center">
+        </div>
+        <div>
+          <div class="cw-label">WEIGHT</div>
+          <input class="field-input" type="text" placeholder="lbs"
+            value="${ex.weight}" oninput="cwExercises[${i}].weight=this.value"
+            style="padding:10px 8px;text-align:center">
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function saveCustomWorkout() {
+  const name = document.getElementById('cw-name').value.trim();
+  if (!name) { showToast('Give your workout a name!'); return; }
+  const validEx = cwExercises.filter(ex => ex.name.trim());
+  if (!validEx.length) { showToast('Add at least one named exercise!'); return; }
+
+  const workout = {
+    id: Date.now(),
+    name: name.toUpperCase(),
+    muscle: cwMuscle || 'Custom',
+    goal: 'Custom',
+    duration: Math.max(20, validEx.length * 7),
+    createdAt: new Date().toISOString(),
+    isCustom: true,
+    exercises: validEx.map(ex => ({
+      name: ex.name.trim(),
+      muscles: '',
+      type: 'Custom',
+      rest: '60 sec',
+      cue: '',
+      sets: Array.from({ length: ex.sets }, (_, si) => ({
+        label: String(si + 1),
+        reps: ex.reps || '10',
+        weight: ex.weight ? `${ex.weight} lbs` : 'Choose weight',
+        tempo: 'Controlled'
+      }))
+    }))
+  };
+
+  state.workouts.push(workout);
+  save();
+  showToast(`"${workout.name}" saved to your program!`);
+  setTimeout(() => {
+    closeCustomBuilder();
+    switchTab('home');
+    renderWorkouts();
+  }, 800);
+}
+
+// ═══════════════════════════════════════
+// PRIVATE GROUPS — THE PIT
+// ═══════════════════════════════════════
+let pitGroupFilter = false; // false = all, true = group only
+
+function openGroupsModal() {
+  renderGroupsContent();
+  document.getElementById('groups-modal').classList.add('open');
+  document.getElementById('group-code-input').value = '';
+}
+
+function closeGroupsModal() {
+  document.getElementById('groups-modal').classList.remove('open');
+}
+
+function renderGroupsContent() {
+  const el = document.getElementById('groups-content');
+  const group = state.group;
+  const createDiv = document.getElementById('groups-create-divider');
+  const createForm = document.getElementById('groups-create-form');
+  const createBtn = document.getElementById('groups-create-btn');
+
+  if (group) {
+    el.innerHTML = `
+      <div style="margin-bottom:6px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent-dim)">YOUR GROUP</div>
+      <div class="group-active-card">
+        <div>
+          <div class="group-active-name">${group.name}</div>
+          <div class="group-active-sub">Code: <strong style="color:var(--accent);letter-spacing:3px">${group.code}</strong></div>
+        </div>
+        <button class="group-leave-btn" onclick="leaveGroup()">LEAVE</button>
+      </div>
+      <div class="group-code-display">
+        <div class="group-code-label">INVITE CODE — share with your crew</div>
+        <div class="group-code-val">${group.code}</div>
+        <div class="group-code-copy" onclick="copyGroupCode('${group.code}')">📋 Tap to copy</div>
+      </div>
+    `;
+    createDiv.style.display = 'none';
+    createForm.style.display = 'none';
+    createBtn.style.display = 'none';
+  } else {
+    el.innerHTML = '';
+    createDiv.style.display = '';
+    createForm.style.display = '';
+    createBtn.style.display = '';
+  }
+}
+
+function generateGroupCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+async function createGroup() {
+  const name = document.getElementById('group-name-input').value.trim();
+  if (!name) { showToast('Enter a group name!'); return; }
+
+  const code = generateGroupCode();
+  const group = { name, code, createdBy: state.user?.name || 'Unknown', createdAt: new Date().toISOString() };
+
+  try {
+    await fbDb.collection('groups').doc(code).set({
+      ...group,
+      members: [window._fbUser?.uid || state.user?.name || 'anon']
+    });
+  } catch(e) { console.warn('Group save to Firestore failed:', e); }
+
+  state.group = group;
+  save();
+  renderGroupsContent();
+  renderPit();
+  showToast('Group created! Share your code 🎉');
+}
+
+async function joinGroup() {
+  const code = document.getElementById('group-code-input').value.trim().toUpperCase();
+  if (code.length !== 6) { showToast('Enter the full 6-character code'); return; }
+
+  try {
+    const snap = await fbDb.collection('groups').doc(code).get();
+    if (!snap.exists) { showToast('Group not found — check the code!'); return; }
+    const groupData = snap.data();
+    state.group = { name: groupData.name, code, joinedAt: new Date().toISOString() };
+    save();
+    fbDb.collection('groups').doc(code).update({
+      members: firebase.firestore.FieldValue.arrayUnion(window._fbUser?.uid || state.user?.name || 'anon')
+    }).catch(() => {});
+    renderGroupsContent();
+    renderPit();
+    closeGroupsModal();
+    showToast(`Joined "${groupData.name}"! 💪`);
+  } catch(e) {
+    showToast('Could not join — check the code and try again');
+  }
+}
+
+function leaveGroup() {
+  state.group = null;
+  pitGroupFilter = false;
+  save();
+  renderGroupsContent();
+  renderPit();
+  showToast('Left the group');
+}
+
+function copyGroupCode(code) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(() => showToast('Code copied! 📋'));
+  } else {
+    showToast(`Code: ${code}`);
+  }
+}
+
+function togglePitFilter() {
+  pitGroupFilter = !pitGroupFilter;
+  renderPit();
 }
 
 // Service Worker
