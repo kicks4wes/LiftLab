@@ -1551,67 +1551,137 @@ button, input, select, textarea,
 }
 
 /* ─── PRIVATE GROUPS ─── */
+/* ─── GROUPS MODAL ─── */
 .groups-modal {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.88);
+  background: rgba(0,0,0,0.85);
   z-index: 700;
   display: none; align-items: flex-end; justify-content: center;
 }
 .groups-modal.open { display: flex; }
 .groups-sheet {
-  background: var(--card); border: 1px solid var(--border2);
-  border-radius: 20px 20px 0 0;
-  padding: 20px 24px calc(20px + env(safe-area-inset-bottom));
-  width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto;
+  background: var(--surface);
+  border-top: 1px solid var(--border2);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-radius: 24px 24px 0 0;
+  padding: 14px 20px calc(28px + env(safe-area-inset-bottom));
+  width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 .groups-handle {
-  width: 36px; height: 4px; background: var(--border2);
-  border-radius: 2px; margin: 0 auto 20px;
+  width: 40px; height: 4px; background: var(--border2);
+  border-radius: 2px; margin: 0 auto 24px;
 }
-.groups-sheet-title {
+
+/* no-group state */
+.groups-hero {
+  text-align: center; padding-bottom: 24px;
+  border-bottom: 1px solid var(--border); margin-bottom: 20px;
+}
+.groups-hero-icon { font-size: 40px; margin-bottom: 10px; }
+.groups-hero-title {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 26px; font-weight: 800; margin-bottom: 4px;
+  font-size: 28px; font-weight: 900; margin-bottom: 6px;
 }
-.groups-sheet-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.5; }
-.group-code-display {
-  background: #1a2200; border: 1px solid #3a5a10;
-  border-radius: 10px; padding: 16px; text-align: center; margin-bottom: 16px;
+.groups-hero-sub { font-size: 13px; color: var(--text2); line-height: 1.55; }
+
+.groups-section {
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 14px; padding: 18px; margin-bottom: 12px;
 }
-.group-code-label {
+.groups-section-label {
   font-size: 10px; font-weight: 700; letter-spacing: 2px;
-  text-transform: uppercase; color: var(--accent-dim); margin-bottom: 6px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
 }
-.group-code-val {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 38px; font-weight: 900; letter-spacing: 8px; color: var(--accent);
+.groups-section-label::after {
+  content: ''; flex: 1; height: 1px; background: #1a2200;
 }
-.group-code-copy {
-  font-size: 12px; color: var(--accent-dim); margin-top: 6px;
-  cursor: pointer; touch-action: manipulation;
-}
-.group-active-card {
-  background: var(--card2); border: 1px solid var(--border2);
-  border-radius: 10px; padding: 14px;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  margin-bottom: 16px;
-}
-.group-active-name { font-size: 15px; font-weight: 700; }
-.group-active-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
-.group-leave-btn {
-  background: transparent; border: 1px solid var(--red); color: var(--red);
-  font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 800;
-  letter-spacing: 1px; padding: 7px 14px; border-radius: 6px;
-  cursor: pointer; touch-action: manipulation; flex-shrink: 0;
-}
-.groups-divider {
-  text-align: center; font-size: 10px; font-weight: 700; letter-spacing: 2px;
-  text-transform: uppercase; color: var(--text3); margin: 16px 0 14px;
+.groups-or {
+  text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--text3); margin: 4px 0 12px;
   display: flex; align-items: center; gap: 10px;
 }
-.groups-divider::before, .groups-divider::after {
-  content: ''; flex: 1; height: 1px; background: var(--border2);
+.groups-or::before, .groups-or::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
 }
+.groups-code-input {
+  flex: 1; background: var(--card2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 14px;
+  color: var(--text); font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px; font-weight: 900; letter-spacing: 8px;
+  text-transform: uppercase; text-align: center; outline: none;
+  transition: border-color 0.2s;
+}
+.groups-code-input:focus { border-color: var(--accent); }
+.groups-code-input::placeholder { color: var(--text3); letter-spacing: 4px; font-size: 20px; }
+.groups-join-btn {
+  padding: 14px 22px; border-radius: 10px; border: none;
+  background: var(--accent); color: #000;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800;
+  cursor: pointer; touch-action: manipulation; white-space: nowrap; flex-shrink: 0;
+}
+.groups-close-btn {
+  width: 100%; margin-top: 8px; padding: 14px; border-radius: 10px;
+  border: none; background: transparent; color: var(--text3);
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; touch-action: manipulation;
+}
+
+/* in-group state */
+.groups-in-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--accent); background: #1a2200; border: 1px solid #3a5a10;
+  border-radius: 20px; padding: 5px 12px; margin-bottom: 14px;
+}
+.groups-in-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 36px; font-weight: 900; line-height: 1; margin-bottom: 20px;
+}
+.group-code-card {
+  background: linear-gradient(135deg, #111a00, #0a1200);
+  border: 1px solid #2d4a08; border-radius: 16px;
+  padding: 24px 20px; text-align: center; margin-bottom: 16px;
+}
+.group-code-card-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--accent-dim); margin-bottom: 14px;
+}
+.group-code-chars {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin-bottom: 16px;
+}
+.group-code-char {
+  width: 42px; height: 52px; border-radius: 8px;
+  background: rgba(200,245,66,0.07); border: 1px solid #3a5a10;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px; font-weight: 900; color: var(--accent);
+}
+.group-code-copy-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border-radius: 8px;
+  border: 1px solid #3a5a10; background: rgba(200,245,66,0.06);
+  color: var(--accent); font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer; touch-action: manipulation;
+  transition: background 0.15s;
+}
+.group-code-copy-btn:active { background: rgba(200,245,66,0.14); }
+.group-share-hint {
+  font-size: 12px; color: var(--text3); text-align: center;
+  line-height: 1.6; margin-bottom: 20px;
+}
+.group-leave-btn {
+  width: 100%; padding: 14px; border-radius: 10px;
+  border: 1px solid var(--border2); background: transparent; color: var(--text3);
+  font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800;
+  letter-spacing: 1px; cursor: pointer; touch-action: manipulation;
+  transition: border-color 0.2s, color 0.2s;
+}
+.group-leave-btn:active { border-color: var(--red); color: var(--red); }
+
 .pit-groups-btn {
   display: flex; align-items: center; gap: 6px;
   padding: 8px 14px; border-radius: 20px;
@@ -2076,22 +2146,7 @@ button, input, select, textarea,
 <div class="groups-modal" id="groups-modal">
   <div class="groups-sheet">
     <div class="groups-handle"></div>
-    <div class="groups-sheet-title">SQUAD GROUPS</div>
-    <div class="groups-sheet-sub">Train with your crew privately. Create a group and share the code — only members see each other's lifts and leaderboard.</div>
     <div id="groups-content"></div>
-    <div class="groups-divider" id="groups-create-divider">CREATE A GROUP</div>
-    <div class="field-group" id="groups-create-form">
-      <label class="field-label">Group Name</label>
-      <input class="field-input" type="text" id="group-name-input" placeholder="e.g. Monday Crew" autocomplete="off">
-    </div>
-    <button class="gen-btn" id="groups-create-btn" onclick="createGroup()" style="margin-bottom:16px">🔑 CREATE GROUP</button>
-    <div class="groups-divider">JOIN WITH CODE</div>
-    <div style="display:flex;gap:10px;align-items:center">
-      <input class="field-input" type="text" id="group-code-input" placeholder="6-char code"
-        style="flex:1;text-transform:uppercase;letter-spacing:4px;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800" maxlength="6" autocomplete="off">
-      <button onclick="joinGroup()" style="padding:14px 20px;border-radius:10px;border:none;background:var(--accent);color:#000;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;cursor:pointer;touch-action:manipulation;white-space:nowrap;flex-shrink:0">JOIN</button>
-    </div>
-    <button onclick="closeGroupsModal()" style="width:100%;margin-top:16px;padding:14px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;cursor:pointer;touch-action:manipulation">CLOSE</button>
   </div>
 </div>
 
@@ -4035,7 +4090,6 @@ function saveCustomWorkout() {
 function openGroupsModal() {
   renderGroupsContent();
   document.getElementById('groups-modal').classList.add('open');
-  document.getElementById('group-code-input').value = '';
 }
 
 function closeGroupsModal() {
@@ -4045,34 +4099,52 @@ function closeGroupsModal() {
 function renderGroupsContent() {
   const el = document.getElementById('groups-content');
   const group = state.group;
-  const createDiv = document.getElementById('groups-create-divider');
-  const createForm = document.getElementById('groups-create-form');
-  const createBtn = document.getElementById('groups-create-btn');
 
   if (group) {
+    const chars = group.code.split('').map(c =>
+      `<div class="group-code-char">${c}</div>`
+    ).join('');
     el.innerHTML = `
-      <div style="margin-bottom:6px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent-dim)">YOUR GROUP</div>
-      <div class="group-active-card">
-        <div>
-          <div class="group-active-name">${group.name}</div>
-          <div class="group-active-sub">Code: <strong style="color:var(--accent);letter-spacing:3px">${group.code}</strong></div>
-        </div>
-        <button class="group-leave-btn" onclick="leaveGroup()">LEAVE</button>
+      <div class="groups-in-badge">✓ Squad Active</div>
+      <div class="groups-in-name">${group.name}</div>
+      <div class="group-code-card">
+        <div class="group-code-card-label">Invite Code — share with your crew</div>
+        <div class="group-code-chars">${chars}</div>
+        <button class="group-code-copy-btn" onclick="copyGroupCode('${group.code}')">
+          📋 Copy Code
+        </button>
       </div>
-      <div class="group-code-display">
-        <div class="group-code-label">INVITE CODE — share with your crew</div>
-        <div class="group-code-val">${group.code}</div>
-        <div class="group-code-copy" onclick="copyGroupCode('${group.code}')">📋 Tap to copy</div>
-      </div>
+      <p class="group-share-hint">Anyone who enters this code can join your squad<br>and compete on The Pit leaderboard.</p>
+      <button class="group-leave-btn" onclick="leaveGroup()">Leave Squad</button>
     `;
-    createDiv.style.display = 'none';
-    createForm.style.display = 'none';
-    createBtn.style.display = 'none';
   } else {
-    el.innerHTML = '';
-    createDiv.style.display = '';
-    createForm.style.display = '';
-    createBtn.style.display = '';
+    el.innerHTML = `
+      <div class="groups-hero">
+        <div class="groups-hero-icon">🔥</div>
+        <div class="groups-hero-title">JOIN A SQUAD</div>
+        <div class="groups-hero-sub">Compete privately with your crew.<br>Only squad members see each other's lifts.</div>
+      </div>
+      <div class="groups-section">
+        <div class="groups-section-label">Create your own</div>
+        <input class="field-input" type="text" id="group-name-input"
+          placeholder="Squad name, e.g. Monday Crew" autocomplete="off"
+          style="margin-bottom:12px">
+        <button class="gen-btn" onclick="createGroup()" style="font-size:20px;padding:16px">
+          🔑 CREATE SQUAD
+        </button>
+      </div>
+      <div class="groups-or">or</div>
+      <div class="groups-section">
+        <div class="groups-section-label">Join with a code</div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input class="groups-code-input" type="text" id="group-code-input"
+            placeholder="· · · · · ·" maxlength="6" autocomplete="off"
+            oninput="this.value=this.value.toUpperCase()">
+          <button class="groups-join-btn" onclick="joinGroup()">JOIN</button>
+        </div>
+      </div>
+      <button class="groups-close-btn" onclick="closeGroupsModal()">Close</button>
+    `;
   }
 }
 
